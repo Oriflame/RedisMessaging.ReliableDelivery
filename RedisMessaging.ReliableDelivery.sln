@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisMessaging.ReliableDelivery", "src\RedisMessaging.ReliableDelivery\RedisMessaging.ReliableDelivery.csproj", "{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{FB79D9FE-F411-46F9-9CA3-C2A40096D7C4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisMessaging.ReliableDelivery.Tests", "test\Ori.Common.Clustering.Events.Tests\RedisMessaging.ReliableDelivery.Tests.csproj", "{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "props", "props", "{73647D21-9D49-4BF2-8D07-64754692CCEC}"
+	ProjectSection(SolutionItems) = preProject
+		props\common.props = props\common.props
+		props\version.props = props\version.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C851A13E-A480-4752-801B-29F3D742E959}"
+	ProjectSection(SolutionItems) = preProject
+		readme.md = readme.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9} = {FB79D9FE-F411-46F9-9CA3-C2A40096D7C4}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5F1D5D5C-C69E-4694-AE95-9C5E1E127D2A}
+	EndGlobalSection
+EndGlobal
