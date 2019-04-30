@@ -25,6 +25,8 @@ namespace RedisMessaging.ReliableDelivery.Publish
 
         private readonly IConnectionMultiplexer _connectionMultiplexer;
 
+        protected virtual IDatabase Database => _connectionMultiplexer.GetDatabase();
+
         public ReliablePublisher(IConnectionMultiplexer connectionMultiplexer)
         {
             _connectionMultiplexer = connectionMultiplexer;
@@ -32,17 +34,17 @@ namespace RedisMessaging.ReliableDelivery.Publish
 
         public void Publish(string channel, string message)
         {
-            var parameters = CreateParameters(channel, message);
-            _connectionMultiplexer.GetDatabase().ScriptEvaluate(_publishScript, parameters, CommandFlags.DemandMaster | CommandFlags.PreferMaster | CommandFlags.NoRedirect);
+            var parameters = CreateScriptParameters(channel, message);
+            Database.ScriptEvaluate(_publishScript, parameters, CommandFlags.DemandMaster | CommandFlags.PreferMaster | CommandFlags.NoRedirect);
         }
 
         public Task PublishAsync(string channel, string message)
         {
-            var parameters = CreateParameters(channel, message);
-            return _connectionMultiplexer.GetDatabase().ScriptEvaluateAsync(_publishScript, parameters, CommandFlags.DemandMaster);
+            var parameters = CreateScriptParameters(channel, message);
+            return Database.ScriptEvaluateAsync(_publishScript, parameters, CommandFlags.DemandMaster);
         }
 
-        private static object CreateParameters(string channel, string message)
+        private static object CreateScriptParameters(string channel, string message)
         {
             return new
             {

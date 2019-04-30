@@ -18,7 +18,7 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
         private readonly IMessageValidator _messageValidator;
         private readonly IMessageValidationFailureHandler _messageValidationFailureHandler;
         private readonly ILogger<ReliableSubscriber> _log;
-        private readonly StackExchange.Redis.ISubscriber _subscriber;
+        private readonly IConnectionMultiplexer _connectionMultiplexer;
         private readonly ConcurrentDictionary<string, ChannelMessageQueue> _queues = new ConcurrentDictionary<string, ChannelMessageQueue>();
 
         public ReliableSubscriber(
@@ -30,15 +30,17 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
             _messageValidator = messageValidator;
             _messageValidationFailureHandler = messageValidationFailureHandler;
             _log = log;
-            _subscriber = connectionMultiplexer.GetSubscriber();
+            _connectionMultiplexer = connectionMultiplexer;
         }
+
+        protected virtual ISubscriber Subscriber => _connectionMultiplexer.GetSubscriber();
 
         public void Subscribe(string channel, Action<string, string> handler)
         {
             bool isQueueAlreadyRegistered = true;
             _queues.GetOrAdd(channel, channelName =>
             {
-                var queue = _subscriber.Subscribe(channel);
+                var queue = Subscriber.Subscribe(channel);
                 queue.OnMessage(channelMessage => HandleMessage(channelMessage.Channel, channelMessage.Message, handler));
                 isQueueAlreadyRegistered = false;
                 return queue;
@@ -52,7 +54,7 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
 
         public async Task SubscribeAsync(string channel, Action<string, string> handler)
         {
-            var queue = await _subscriber.SubscribeAsync(channel).ConfigureAwait(false);
+            var queue = await Subscriber.SubscribeAsync(channel).ConfigureAwait(false);
             bool isQueueAlreadyRegistered = true;
             _queues.GetOrAdd(channel, channelName =>
             {

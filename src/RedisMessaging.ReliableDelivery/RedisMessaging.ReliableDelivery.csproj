@@ -6,7 +6,7 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageTags>ori common infrastructure clustering events redis</PackageTags>
+    <PackageTags>oriflame redis publish subscribe reliable guaranteed delivery failover pubsub messaging</PackageTags>
     <ProjectGuid>{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}</ProjectGuid>
   </PropertyGroup>
 
@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
-    <PackageReference Include="Ori.Common.SonarQube" Version="1.1.0" PrivateAssets="All" />
     <PackageReference Include="StackExchange.Redis" Version="2.0.601" />
   </ItemGroup>
 
