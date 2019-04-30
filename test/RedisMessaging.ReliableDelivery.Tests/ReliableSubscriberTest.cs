@@ -6,7 +6,7 @@ using Moq;
 using RedisMessaging.ReliableDelivery.Subscribe;
 using Xunit;
 
-namespace RedisMessaging.ReliableDelivery.Tests.Redis.ReliableDelivery
+namespace RedisMessaging.ReliableDelivery.Tests
 {
     public class ReliableSubscriberTest: IClassFixture<RedisFixture>
     {

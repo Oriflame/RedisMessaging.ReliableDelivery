@@ -1,7 +1,7 @@
 ﻿using System;
 using StackExchange.Redis;
 
-namespace RedisMessaging.ReliableDelivery.Tests.Redis
+namespace RedisMessaging.ReliableDelivery.Tests
 {
     public class RedisFixture : IDisposable
     {

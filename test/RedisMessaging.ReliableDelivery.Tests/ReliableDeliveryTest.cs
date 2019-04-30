@@ -11,7 +11,7 @@ using StackExchange.Redis;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisMessaging.ReliableDelivery.Tests.Redis.ReliableDelivery
+namespace RedisMessaging.ReliableDelivery.Tests
 {
     [Trait("Category", "Integration test")]
     public class ReliableDeliveryTest : IClassFixture<RedisFixture>
