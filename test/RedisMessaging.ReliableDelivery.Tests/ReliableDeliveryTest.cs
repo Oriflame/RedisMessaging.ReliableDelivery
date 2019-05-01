@@ -2,8 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
-using Moq;
 using Newtonsoft.Json;
 using RedisMessaging.ReliableDelivery.Publish;
 using RedisMessaging.ReliableDelivery.Subscribe;
@@ -35,45 +33,7 @@ namespace RedisMessaging.ReliableDelivery.Tests
             _output.WriteLine($"Running redis for {GetType().Name} on {endpoint}");
         }
 
-        public string RandomSuffix => DateTime.Now.Ticks.ToString();
-
-        // TODO move to ReliablePublisherTest
-        [Fact]
-        public void PublishTest()
-        {
-            // arrange
-            var channelName = nameof(PublishTest) + RandomSuffix;
-            var publisher = new ReliablePublisher(_redis.GetConnection());
-            var receivedMessage = "";
-            var subscriber = _subscriberConnection.GetSubscriber(); // standard, not-reliable subscriber
-            subscriber.Subscribe(channelName, (channel, message) => receivedMessage += message);
-
-            // act
-            publisher.Publish(channelName, "test message:my message");
-            Thread.Sleep(2);
-
-            // assert
-            Assert.Equal("1:test message:my message", receivedMessage);
-        }
-
-        // TODO move to ReliablePublisherTest
-        [Fact]
-        public async Task PublishAsyncTest()
-        {
-            // arrange
-            var channelName = nameof(PublishAsyncTest) + RandomSuffix;
-            var publisher = new ReliablePublisher(_redis.GetConnection());
-            var subscriber = _subscriberConnection.GetSubscriber();  // standard, not-reliable subscriber
-            var receivedMessage = "";
-            await subscriber.SubscribeAsync(channelName, (channel, message) => receivedMessage += message);
-
-            // act
-            await publisher.PublishAsync(channelName, "test message");
-            Thread.Sleep(5);
-
-            // assert
-            Assert.Equal("1:test message", receivedMessage);
-        }
+        private static string RandomSuffix => DateTime.Now.Ticks.ToString();
 
         [Fact]
         public void SubscribeLoadTest()
@@ -87,10 +47,16 @@ namespace RedisMessaging.ReliableDelivery.Tests
 
             var messageValidator = new MessageValidator();
             int messagesReceivedCount = 0;
-            var messageHandler = new MessageHandler(channelName, message =>
-            {
-                Interlocked.Increment(ref messagesReceivedCount);
-            }, messageValidator);
+            var messageHandler = new MessageHandler(
+                channelName,
+                message =>
+                {
+                    Interlocked.Increment(ref messagesReceivedCount);
+                },
+                messageValidator,
+                null,
+                null
+                );
 
             // act
             subscriber.Subscribe(messageHandler);
@@ -109,6 +75,24 @@ namespace RedisMessaging.ReliableDelivery.Tests
             _output.WriteLine($"All {messagesReceivedCount} messages received at {stopwatch.Elapsed}.");
 
             Assert.Equal(messagesCount, messagesReceivedCount);
+        }
+
+        [Fact]
+        public void GetSavedMessages()
+        {
+            // arrange
+            var connectionMultiplexer = _redis.GetConnection();
+            var publisher = new ReliablePublisher(connectionMultiplexer);
+            var loader = new MessageLoader(connectionMultiplexer);
+
+            // act
+            publisher.Publish("test-channel", "message1");
+            publisher.Publish("test-channel", "message2");
+            var savedMessages = loader.GetMessages("test-channel", 0, 10)
+                .ToList();
+
+            // assert
+            Assert.Equal(2, savedMessages.Count());
         }
 
         // TODO
