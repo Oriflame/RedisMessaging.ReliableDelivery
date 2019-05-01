@@ -2,6 +2,17 @@
 {
     public class MessageValidationResult : IMessageValidationResult
     {
-        public static MessageValidationResult Success { get; } = new MessageValidationResult();
+        private readonly string _name;
+        public static MessageValidationResult Success { get; } = new MessageValidationResult("success");
+
+        private MessageValidationResult(string name)
+        {
+            _name = name;
+        }
+
+        public override string ToString()
+        {
+            return _name;
+        }
     }
 }

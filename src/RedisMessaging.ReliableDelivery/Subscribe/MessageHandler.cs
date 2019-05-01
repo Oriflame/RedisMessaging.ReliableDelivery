@@ -1,62 +1,68 @@
 ﻿using System;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 namespace RedisMessaging.ReliableDelivery.Subscribe
 {
     public class MessageHandler : IMessageHandler
     {
-        private readonly Action<string> _successMessageHandler;
+        private readonly Action<Message> _onSuccessMessage;
         private readonly IMessageValidator _messageValidator;
+        private readonly IMessageLoader _messageLoader;
+        private readonly ILogger<MessageHandler> _log;
 
         public RedisChannel Channel { get; }
 
         public MessageHandler(
             RedisChannel channel,
-            Action<string> successMessageHandler,
-            IMessageValidator messageValidator)
+            Action<Message> onSuccessMessage,
+            IMessageValidator messageValidator,
+            IMessageLoader messageLoader,
+            ILogger<MessageHandler> log)
         {
-            _successMessageHandler = successMessageHandler;
-            _messageValidator = messageValidator;
             Channel = channel;
+            _onSuccessMessage = onSuccessMessage;
+            _messageValidator = messageValidator;
+            _messageLoader = messageLoader;
+            _log = log;
         }
 
-        protected virtual void HandleMissingMessages(string currentMessageContent, long currentMessageId, long lastProcessedMessageId)
+        protected virtual void OnMissingMessages(Message currentMessage, long lastProcessedMessageId)
         {
-            throw new NotImplementedException();
+            var lostMessages = _messageLoader.GetMessages(Channel, lastProcessedMessageId + 1, currentMessage.Id - 1);
+            foreach (var lostMessage in lostMessages)
+            {
+                OnSuccessfulMessage(lostMessage);
+            }
+            OnSuccessfulMessage(currentMessage);
         }
 
-        protected virtual void HandleSuccessfulMessage(string messageContent, long messageId)
+        protected virtual void OnSuccessfulMessage(Message message)
         {
-            _successMessageHandler(messageContent);
+            _onSuccessMessage(message);
         }
 
-        protected virtual void HandleOtherValidation(IMessageValidationResult validationResult)
+        protected virtual void OnOtherValidationResult(IMessageValidationResult validationResult)
         {
+            _log.LogDebug("OtherValidationResult occured: {ValidationResult}", validationResult);
         }
 
-        public void HandleMessage(long messageId, string messageContent)
+        public void HandleMessage(Message message)
         {
-            var validationResult = _messageValidator.Validate(messageContent, messageId);
+            var validationResult = _messageValidator.Validate(message);
             switch (validationResult)
             {
-                case var success when MessageValidationResult.Success.Equals(success):
-                    HandleSuccessfulMessage(messageContent, messageId);
+                case var result when MessageValidationResult.Success.Equals(result):
+                    OnSuccessfulMessage(message);
                     break;
                 case ValidationResultForMissingMessages missingMessagesResult:
                     var lastProcessedMessageId = missingMessagesResult.LastProcessedMessageId;
-                    HandleMissingMessages(messageContent, messageId, lastProcessedMessageId);
+                    OnMissingMessages(message, lastProcessedMessageId);
                     break;
                 default:
-                    HandleOtherValidation(validationResult);
+                    OnOtherValidationResult(validationResult);
                     break;
             }
         }
-    }
-
-    public interface IMessageHandler
-    {
-        RedisChannel Channel { get; }
-
-        void HandleMessage(long messageId, string messageContent);
     }
 }

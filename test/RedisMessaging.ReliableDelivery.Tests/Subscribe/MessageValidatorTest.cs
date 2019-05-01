@@ -12,8 +12,10 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
             var validator = new MessageValidator();
 
             // act & assert
-            Assert.Same(MessageValidationResult.Success,  validator.Validate("test-message", 2));
-            Assert.Same(MessageValidationResult.Success, validator.Validate("test-message", 3));
+            var message1 = new Message(2, "test-message");
+            Assert.Same(MessageValidationResult.Success,  validator.Validate(message1));
+            var message2 = new Message(3, "test-message");
+            Assert.Same(MessageValidationResult.Success, validator.Validate(message2));
         }
 
         [Fact]
@@ -23,9 +25,11 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
             var validator = new MessageValidator();
 
             // act & assert
-            Assert.Same(MessageValidationResult.Success, validator.Validate("test-message", 1));
+            var message1 = new Message(1, "test-message");
+            Assert.Same(MessageValidationResult.Success, validator.Validate(message1));
 
-            var failureResult = validator.Validate("test-message", 3);
+            var message2 = new Message(3, "test-message");
+            var failureResult = validator.Validate(message2);
             Assert.Equal(3, validator.LastMessageId);
             var resultForMissingMessages = Assert.IsAssignableFrom<ValidationResultForMissingMessages>(failureResult);
             Assert.Equal(1, resultForMissingMessages.LastProcessedMessageId); // message with ID=2 is missing
@@ -38,7 +42,8 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
             var validator = new MessageValidator();
 
             // act & assert
-            Assert.Same(MessageValidationResult.Success, validator.Validate("test-message", 2000)); // some large message ID
+            var message = new Message(2000, "test-message"); // some large message ID
+            Assert.Same(MessageValidationResult.Success, validator.Validate(message));
         }
     }
 }

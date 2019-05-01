@@ -8,15 +8,15 @@
         internal long LastMessageId { get; private set; }
 
         /// <inheritdoc />
-        public virtual IMessageValidationResult Validate(string message, long messageId)
+        public virtual IMessageValidationResult Validate(Message message)
         {
             long previousMessageId;
             lock (_lock)
             {
                 previousMessageId = LastMessageId;
-                if (previousMessageId < messageId)
+                if (previousMessageId < message.Id)
                 {
-                    LastMessageId = messageId;
+                    LastMessageId = message.Id;
                 }
             }
 
@@ -27,7 +27,7 @@
                 return MessageValidationResult.Success;
             }
 
-            var isMessageValid = IsMessageValid(previousMessageId, messageId);
+            var isMessageValid = IsMessageValid(previousMessageId, message.Id);
             if (isMessageValid)
             {
                 return MessageValidationResult.Success;

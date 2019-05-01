@@ -15,9 +15,8 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             // assert
             Assert.True(isValid);
-            var (parsedMessageId, parsedMessageContent) = parsedMessage;
-            Assert.Equal(messageId, parsedMessageId);
-            Assert.Equal("message", parsedMessageContent);
+            Assert.Equal(messageId, parsedMessage.Id);
+            Assert.Equal("message", parsedMessage.Content);
         }
 
         [Theory]

@@ -11,5 +11,10 @@
         {
             LastProcessedMessageId = lastProcessedMessageId;
         }
+
+        public override string ToString()
+        {
+            return $"MissingMessages:LastProcessedMessageId={LastProcessedMessageId}";
+        }
     }
 }

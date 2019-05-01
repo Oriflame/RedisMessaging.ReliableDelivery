@@ -8,12 +8,12 @@ using Xunit;
 
 namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
 {
-    public class ReliableSubscriberTest: IClassFixture<RedisFixture>
+    public class ReliableSubscriberTest : IClassFixture<RedisFixture>
     {
         private readonly RedisFixture _redis;
         private readonly Mock<IMessageParser> _messageParser;
         private readonly Mock<ILogger<ReliableSubscriber>> _log;
-        private Mock<IMessageHandler> _messageHandler;
+        private readonly Mock<IMessageHandler> _messageHandler;
 
         public ReliableSubscriberTest(RedisFixture redis)
         {
@@ -64,7 +64,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
                 It.IsAny<Exception>(),
                 It.IsAny<Func<object, Exception, string>>()));
 
-            (long, string) parsedMessage;
+            Message parsedMessage;
             _messageParser.Setup(_ => _.TryParse(It.IsAny<string>(), out parsedMessage))
                 .Returns(false); // simulation of message in invalid format
 
@@ -98,13 +98,13 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
         {
             // arrange
             var messageId = 123;
-            (long, string) parsedMessage = (messageId, "message");
+            var parsedMessage = new Message(messageId, "message");
             _messageParser.Setup(_ => _.TryParse(It.IsAny<string>(), out parsedMessage))
                 .Returns(true); // simulation of message in valid format
 
             _messageHandler.SetupGet(_ => _.Channel)
                 .Returns("testChannel");
-            _messageHandler.Setup(_ => _.HandleMessage(It.IsAny<long>(), It.IsAny<string>()));
+            _messageHandler.Setup(_ => _.HandleMessage(It.IsAny<Message>()));
 
             var subscriber = new ReliableSubscriber(_log.Object, _redis.GetConnection(), _messageParser.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
@@ -118,7 +118,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
             Assert.Null(subscriber.LastException);
             Assert.Equal(0, subscriber.ExceptionsCount);
             _messageParser.Verify(_ => _.TryParse($"{messageId}:message", out parsedMessage), Times.Once);
-            _messageHandler.Verify(_ => _.HandleMessage(messageId, "message"), Times.Once);
+            _messageHandler.Verify(_ => _.HandleMessage(new Message(messageId, "message")), Times.Once);
         }
     }
 }

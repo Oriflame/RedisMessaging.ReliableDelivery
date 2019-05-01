@@ -134,8 +134,7 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
                     return;
                 }
 
-                var (messageId, messageContent) = parsedMessage;
-                handler.HandleMessage(messageId, messageContent);
+                handler.HandleMessage(parsedMessage);
                 LastException = null;
             }
             catch (Exception exception)

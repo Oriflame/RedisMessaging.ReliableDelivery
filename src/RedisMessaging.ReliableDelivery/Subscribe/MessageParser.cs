@@ -25,27 +25,26 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
         //}
 
         /// <inheritdoc />
-        public bool TryParse(string message, out (long, string) parsedMessage)
+        public bool TryParse(string message, out Message parsedMessage)
         {
-            var messageParts = ((string)message).Split(Separator, 2);
+            var messageParts = message.Split(Separator, 2);
             if (messageParts.Length != 2)
             {
                 LogWarning($"Message format should be 'messageId{ReliablePublisher.MessagePartSeparator}messageContent'. It contains {{MessagePartsCount}} parts.", messageParts.Length);
-                parsedMessage.Item1 = 0;
-                parsedMessage.Item2 = null;
+
+                parsedMessage = Message.Undefined;
                 return false;
             }
-
-            parsedMessage.Item2 = messageParts[1];
 
             if (!long.TryParse(messageParts[0], out var messageId))
             {
                 LogWarning("MessageId should be convertible to integer (messageId length={MessageIdLength}).", messageParts[0].Length);
-                parsedMessage.Item1 = 0;
+                parsedMessage = Message.Undefined;
                 return false;
             }
 
-            parsedMessage.Item1 = messageId;
+            var messageContent = messageParts[1];
+            parsedMessage = new Message(messageId, messageContent);
 
             return true;
         }
