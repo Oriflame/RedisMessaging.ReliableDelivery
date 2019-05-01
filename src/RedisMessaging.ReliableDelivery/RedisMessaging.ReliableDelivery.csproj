@@ -4,7 +4,7 @@
   <Import Project="../../props/common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net471;netstandard2.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>oriflame redis publish subscribe reliable guaranteed delivery failover pubsub messaging</PackageTags>
     <ProjectGuid>{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}</ProjectGuid>

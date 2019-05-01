@@ -5,9 +5,9 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
 {
     public interface IReliableSubscriber
     {
-        void Subscribe(string channel, Action<string, string> handler);
+        void Subscribe(IMessageHandler handler);
 
-        Task SubscribeAsync(string channel, Action<string, string> handler);
+        Task SubscribeAsync(IMessageHandler handler);
 
         void Unsubscribe(string channel);
 

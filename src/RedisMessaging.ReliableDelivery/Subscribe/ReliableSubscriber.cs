@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using RedisMessaging.ReliableDelivery.Publish;
 using StackExchange.Redis;
 
+[assembly: InternalsVisibleTo("RedisMessaging.ReliableDelivery.Tests")]
 namespace RedisMessaging.ReliableDelivery.Subscribe
 {
     /// <summary>
@@ -14,34 +15,35 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
     /// </summary>
     public class ReliableSubscriber : IReliableSubscriber
     {
-        private static readonly char[] Separator = { ReliablePublisher.MessagePartSeparator };
-        private readonly IMessageValidator _messageValidator;
-        private readonly IMessageValidationFailureHandler _messageValidationFailureHandler;
+        private readonly IMessageParser _messageParser;
         private readonly ILogger<ReliableSubscriber> _log;
         private readonly IConnectionMultiplexer _connectionMultiplexer;
         private readonly ConcurrentDictionary<string, ChannelMessageQueue> _queues = new ConcurrentDictionary<string, ChannelMessageQueue>();
 
         public ReliableSubscriber(
+            ILogger<ReliableSubscriber> log, 
             IConnectionMultiplexer connectionMultiplexer,
-            IMessageValidator messageValidator,
-            IMessageValidationFailureHandler messageValidationFailureHandler,
-            ILogger<ReliableSubscriber> log)
+            IMessageParser messageParser)
         {
-            _messageValidator = messageValidator;
-            _messageValidationFailureHandler = messageValidationFailureHandler;
             _log = log;
             _connectionMultiplexer = connectionMultiplexer;
+            _messageParser = messageParser;
         }
 
         protected virtual ISubscriber Subscriber => _connectionMultiplexer.GetSubscriber();
 
-        public void Subscribe(string channel, Action<string, string> handler)
+        // for testing
+        internal Exception LastException { get; private set; }
+        internal long ExceptionsCount { get; private set; }
+        
+        public void Subscribe(IMessageHandler messageHandler)
         {
+            var channel = messageHandler.Channel;
             bool isQueueAlreadyRegistered = true;
             _queues.GetOrAdd(channel, channelName =>
             {
                 var queue = Subscriber.Subscribe(channel);
-                queue.OnMessage(channelMessage => HandleMessage(channelMessage.Channel, channelMessage.Message, handler));
+                queue.OnMessage(channelMessage => HandleMessage(channelMessage.Message, messageHandler));
                 isQueueAlreadyRegistered = false;
                 return queue;
             });
@@ -52,8 +54,9 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
             }
         }
 
-        public async Task SubscribeAsync(string channel, Action<string, string> handler)
+        public async Task SubscribeAsync(IMessageHandler handler)
         {
+            var channel = handler.Channel;
             var queue = await Subscriber.SubscribeAsync(channel).ConfigureAwait(false);
             bool isQueueAlreadyRegistered = true;
             _queues.GetOrAdd(channel, channelName =>
@@ -64,11 +67,11 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
 
             if (isQueueAlreadyRegistered)
             {
-                await queue.UnsubscribeAsync();
+                await queue.UnsubscribeAsync().ConfigureAwait(false);
                 throw new ArgumentException($"There already exists a handler subscribed to channel '{channel}'");
             }
 
-            queue.OnMessage(channelMessage => HandleMessage(channelMessage.Channel, channelMessage.Message, handler));
+            queue.OnMessage(channelMessage => HandleMessage(channelMessage.Message, handler));
         }
 
         public void Unsubscribe(string channel)
@@ -112,24 +115,33 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
             return Task.WhenAll(tasks);
         }
 
-        private void HandleMessage(string redisChannel, RedisValue fullMessage, Action<string, string> handler)
+
+        protected virtual void OnInvalidMessageFormat(string rawMessage, IMessageHandler handler)
+        {
+            _log.LogWarning(
+                "Invalid message format in channel '{Channel}'. rawMessage={RawMessage}",
+                handler.Channel,
+                rawMessage);
+        }
+
+        private void HandleMessage(RedisValue rawMessage, IMessageHandler handler)
         {
             try
             {
-                if (!ValidateMessageFormat(fullMessage, out var parsedMessage))
+                if (!_messageParser.TryParse(rawMessage, out var parsedMessage))
                 {
-                    _messageValidationFailureHandler.OnInvalidMessageFormat(redisChannel, fullMessage);
+                    OnInvalidMessageFormat(rawMessage, handler);
                     return;
                 }
 
                 var (messageId, messageContent) = parsedMessage;
-                if (_messageValidator.Validate(redisChannel, messageContent, messageId))
-                {
-                    handler(redisChannel, messageContent);
-                }
+                handler.HandleMessage(messageId, messageContent);
+                LastException = null;
             }
             catch (Exception exception)
             {
+                ++ExceptionsCount;
+                LastException = exception;
                 // We intentionally log an exception here. Uncaught exception here will be blindly caught
                 // by a caller in StackExchange.Redis.ChannelMessageQueue::OnMessageSyncImpl()
                 const string errorMessage = "Received message processing failed";
@@ -138,34 +150,6 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
                 // we throw an exception just for sure to a caller
                 throw;
             }
-        }
-
-        /// <param name="message">raw message delivered from Redis</param>
-        /// <param name="parsedMessageParts">long - message id, string - message content</param>
-        /// <returns>true when message format is valid</returns>
-        protected virtual bool ValidateMessageFormat(RedisValue message, out (long, string) parsedMessageParts)
-        {
-            var messageParts = ((string)message).Split(Separator, 2);
-            if (messageParts.Length != 2)
-            {
-                _log.LogError($"Message format should be 'messageId{ReliablePublisher.MessagePartSeparator}messageContent'. It contains {{0}} parts.", messageParts.Length);
-                parsedMessageParts.Item1 = 0;
-                parsedMessageParts.Item2 = null;
-                return false;
-            }
-
-            parsedMessageParts.Item2 = messageParts[1];
-
-            if (!long.TryParse(messageParts[0], out var messageId))
-            {
-                _log.LogError("MessageId should be convertible to integer (messageId length={0}).", messageParts[0].Length);
-                parsedMessageParts.Item1 = 0;
-                return false;
-            }
-
-            parsedMessageParts.Item1 = messageId;
-
-            return true;
         }
     }
 }
