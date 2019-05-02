@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using RedisMessaging.ReliableDelivery.Publish;
 
 namespace RedisMessaging.ReliableDelivery.Subscribe
@@ -8,13 +9,9 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
         private static readonly char[] Separator = { ReliablePublisher.MessagePartSeparator };
         private readonly ILogger<MessageParser> _log;
 
-        public MessageParser()
+        public MessageParser(ILogger<MessageParser> log = null)
         {
-        }
-
-        public MessageParser(ILogger<MessageParser> log)
-        {
-            _log = log;
+            _log = log ?? NullLogger<MessageParser>.Instance;
         }
 
         // TODO

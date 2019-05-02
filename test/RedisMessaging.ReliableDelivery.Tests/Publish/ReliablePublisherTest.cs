@@ -27,7 +27,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Publish
 
             // act
             publisher.Publish(channelName, "test message:my message");
-            Thread.Sleep(10);
+            Thread.Sleep(20);
 
             // assert
             Assert.Equal("1:test message:my message", receivedMessage);
@@ -45,7 +45,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Publish
 
             // act
             await publisher.PublishAsync(channelName, "test message");
-            Thread.Sleep(5);
+            Thread.Sleep(20);
 
             // assert
             Assert.Equal("1:test message", receivedMessage);
