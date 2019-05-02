@@ -11,6 +11,8 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
                                                                                  "local channel = @channel\n" +
                                                                                  "local fromId = @fromId\n" +
                                                                                  "local toId = @toId\n" +
+                                                                                 "local lastMessageId = redis.call('GET', 'ch:{'..channel..'}:id')\n" +
+                                                                                 "toId = math.min(toId, lastMessageId)\n" +
                                                                                  "local result = {}\n" +
                                                                                  "for id = fromId, toId, 1\n" +
                                                                                  "do\n" +
@@ -27,7 +29,7 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
             _connectionMultiplexer = connectionMultiplexer;
         }
 
-        public IEnumerable<Message> GetMessages(string channelName, long fromMessageId, long toMessageId)
+        public IEnumerable<Message> GetMessages(string channelName, long fromMessageId, long toMessageId = long.MaxValue)
         {
             // TODO get messages in batches
 
@@ -37,22 +39,15 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
                 fromId = fromMessageId,
                 toId = toMessageId
             };
-            var results = _connectionMultiplexer.GetDatabase().ScriptEvaluate(_getMessagesScript, parameters);
+            var results = (RedisResult[]) _connectionMultiplexer.GetDatabase().ScriptEvaluate(_getMessagesScript, parameters);
 
-            int i = 0;
-            long id = 0;
-            foreach (var result in (RedisResult[])results)
+            var i = 0;
+            while (i < results.Length)
             {
-                if (i % 2 == 0)
-                {
-                    id = (long) result;
-                }
-                else
-                {
-                    var content = (string) result;
-                    yield return new Message(id, content);
-                }
-                ++i;
+                var id = (long) results[i++];
+                var content = (string) results[i++];
+
+                yield return new Message(id, content);
             }
         }
     }

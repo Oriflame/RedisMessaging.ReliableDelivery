@@ -20,6 +20,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
             // arrange
             var connectionMultiplexer = _redis.GetConnection();
             var database = connectionMultiplexer.GetDatabase();
+            database.StringSet("ch:{test-channel}:id", 123);
             database.StringSet("ch:{test-channel}:1", DateTime.Now.Ticks);
             database.StringSet("ch:{test-channel}:3", DateTime.Now.Ticks);
 
