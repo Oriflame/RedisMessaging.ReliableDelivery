@@ -36,6 +36,18 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
         }
 
         [Fact]
+        public void DuplicitMessageReceived()
+        {
+            // arrange
+            var validator = new MessageValidator();
+            var message1 = new Message(1, "test-message");
+
+            // act & assert
+            Assert.Same(MessageValidationResult.Success, validator.Validate(message1));
+            Assert.Same(MessageValidationResult.MessageAgain, validator.Validate(message1));
+        }
+
+        [Fact]
         public void SkipValidationWhenMessagesNotReceivedYet()
         {
             // arrange

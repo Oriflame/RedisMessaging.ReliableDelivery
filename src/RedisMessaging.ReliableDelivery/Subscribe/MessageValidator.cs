@@ -1,23 +1,18 @@
-﻿namespace RedisMessaging.ReliableDelivery.Subscribe
+﻿using System.Threading;
+
+namespace RedisMessaging.ReliableDelivery.Subscribe
 {
     public class MessageValidator : IMessageValidator
     {
-        // TODO is locking needed?
-        private readonly object _lock = new object();
-
-        internal long LastMessageId { get; private set; }
+        protected internal long LastMessageId { get; private set; }
 
         /// <inheritdoc />
         public virtual IMessageValidationResult Validate(Message message)
         {
-            long previousMessageId;
-            lock (_lock)
+            var previousMessageId = LastMessageId;
+            if (previousMessageId < message.Id)
             {
-                previousMessageId = LastMessageId;
-                if (previousMessageId < message.Id)
-                {
-                    LastMessageId = message.Id;
-                }
+                LastMessageId = message.Id;
             }
 
             // if this validator was not synchronized with LastProcessedMessageId from Redis value
@@ -27,18 +22,28 @@
                 return MessageValidationResult.Success;
             }
 
-            var isMessageValid = IsMessageValid(previousMessageId, message.Id);
-            if (isMessageValid)
+            if (IsAlreadyProcessed(previousMessageId, message.Id))
             {
-                return MessageValidationResult.Success;
+                return MessageValidationResult.MessageAgain;
             }
 
-            return new ValidationResultForMissingMessages(previousMessageId);
+            if (IsMessageMissing(previousMessageId, message.Id))
+            {
+                return new ValidationResultForMissingMessages(previousMessageId);
+            }
+
+            return MessageValidationResult.Success;
+
         }
 
-        protected virtual bool IsMessageValid(long previousMessageId, long currentMessageId)
+        protected virtual bool IsAlreadyProcessed(long previousMessageId, long currentMessageId)
         {
-            return previousMessageId + 1 == currentMessageId;
+            return previousMessageId >= currentMessageId;
+        }
+
+        protected virtual bool IsMessageMissing(long previousMessageId, long currentMessageId)
+        {
+            return previousMessageId + 1 < currentMessageId;
         }
     }
 }
