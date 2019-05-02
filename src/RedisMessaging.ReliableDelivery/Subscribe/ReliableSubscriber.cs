@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using StackExchange.Redis;
 
 [assembly: InternalsVisibleTo("RedisMessaging.ReliableDelivery.Tests")]
@@ -21,13 +22,13 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
         private readonly ConcurrentDictionary<string, ChannelMessageQueue> _queues = new ConcurrentDictionary<string, ChannelMessageQueue>();
 
         public ReliableSubscriber(
-            ILogger<ReliableSubscriber> log, 
             IConnectionMultiplexer connectionMultiplexer,
-            IMessageParser messageParser)
+            IMessageParser messageParser,
+            ILogger<ReliableSubscriber> log = null)
         {
-            _log = log;
             _connectionMultiplexer = connectionMultiplexer;
             _messageParser = messageParser;
+            _log = log ?? NullLogger<ReliableSubscriber>.Instance;
         }
 
         protected virtual ISubscriber Subscriber => _connectionMultiplexer.GetSubscriber();

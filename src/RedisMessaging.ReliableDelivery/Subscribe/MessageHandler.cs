@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using StackExchange.Redis;
 
 namespace RedisMessaging.ReliableDelivery.Subscribe
@@ -18,13 +19,13 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
             Action<Message> onSuccessMessage,
             IMessageValidator messageValidator,
             IMessageLoader messageLoader,
-            ILogger<MessageHandler> log)
+            ILogger<MessageHandler> log = null)
         {
             Channel = channel;
             _onSuccessMessage = onSuccessMessage;
             _messageValidator = messageValidator;
             _messageLoader = messageLoader;
-            _log = log;
+            _log = log ?? NullLogger<MessageHandler>.Instance;
         }
 
         protected virtual void OnMissingMessages(Message currentMessage, long lastProcessedMessageId)

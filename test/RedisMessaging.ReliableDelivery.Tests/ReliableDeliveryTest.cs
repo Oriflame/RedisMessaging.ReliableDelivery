@@ -14,6 +14,28 @@ namespace RedisMessaging.ReliableDelivery.Tests
     [Trait("Category", "Integration test")]
     public class ReliableDeliveryTest : IClassFixture<RedisFixture>
     {
+        private class MessageHandlerWrapper : IMessageHandler
+        {
+            private readonly IMessageHandler _innerMessageHandler;
+
+            public MessageHandlerWrapper(IMessageHandler innerMessageHandler)
+            {
+                _innerMessageHandler = innerMessageHandler;
+            }
+
+            public RedisChannel Channel => _innerMessageHandler.Channel;
+
+            public bool IsEnabled { get; set; } = true;
+
+            public void HandleMessage(Message message)
+            {
+                if (IsEnabled)
+                {
+                    _innerMessageHandler.HandleMessage(message);
+                }
+            }
+        }
+
         private readonly ITestOutputHelper _output;
         private readonly RedisFixture _redis;
         private readonly ConnectionMultiplexer _subscriberConnection;
@@ -41,7 +63,7 @@ namespace RedisMessaging.ReliableDelivery.Tests
             // arrange
             var publisher = new ReliablePublisher(_redis.GetConnection());
             var messageParser = new MessageParser();
-            var subscriber = new ReliableSubscriber(null, _subscriberConnection, messageParser);
+            var subscriber = new ReliableSubscriber(_subscriberConnection, messageParser, null);
             var channelName = nameof(SubscribeLoadTest) + RandomSuffix;
             var testMessage = JsonConvert.SerializeObject(new { myKey = "test value's" });
 
@@ -54,7 +76,6 @@ namespace RedisMessaging.ReliableDelivery.Tests
                     Interlocked.Increment(ref messagesReceivedCount);
                 },
                 messageValidator,
-                null,
                 null
                 );
 
@@ -86,13 +107,47 @@ namespace RedisMessaging.ReliableDelivery.Tests
             var loader = new MessageLoader(connectionMultiplexer);
 
             // act
-            publisher.Publish("test-channel", "message1");
-            publisher.Publish("test-channel", "message2");
-            var savedMessages = loader.GetMessages("test-channel", 0, 10)
+            const string channelName = "test-channel-" + nameof(GetSavedMessages);
+            publisher.Publish(channelName, "message1");
+            publisher.Publish(channelName, "message2");
+            var savedMessages = loader.GetMessages(channelName, 0)
                 .ToList();
 
             // assert
             Assert.Equal(2, savedMessages.Count());
+        }
+
+        [Fact]
+        public void TestFailoverMissingMessages()
+        {
+            // arrange
+            var connectionMultiplexer = _redis.GetConnection();
+            var publisher = new ReliablePublisher(connectionMultiplexer);
+            var subscriber = new ReliableSubscriber(connectionMultiplexer, new MessageParser());
+            var loader = new MessageLoader(connectionMultiplexer);
+            var messageValidator = new MessageValidator();
+            int receivedMessagesCount = 0;
+            const string channelName = "test-channel-" + nameof(TestFailoverMissingMessages);
+            var messageHandler = new MessageHandler(
+                channelName,
+                msg => Interlocked.Increment(ref receivedMessagesCount),
+                messageValidator,
+                loader);
+            var messageHandlerWrapper = new MessageHandlerWrapper(messageHandler);
+            subscriber.Subscribe(messageHandlerWrapper);
+
+            // act
+            publisher.Publish(channelName, "message1");
+            Wait(10);
+            messageHandlerWrapper.IsEnabled = false; // simulation of disability to process messages
+            publisher.Publish(channelName, "message2");
+            Wait(10);
+            messageHandlerWrapper.IsEnabled = true;
+            publisher.Publish(channelName, "message3");
+            Wait(10);
+
+            // assert
+            Assert.Equal(3, receivedMessagesCount);
         }
 
         // TODO
@@ -164,9 +219,14 @@ namespace RedisMessaging.ReliableDelivery.Tests
                 {
                     return;
                 }
-                Thread.Sleep(10);
+                Wait(10);
                 elapsedMilliseconds += 10;
             }
+        }
+
+        private static void Wait(int milliseconds)
+        {
+            Thread.Sleep(milliseconds);
         }
     }
 }

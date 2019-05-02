@@ -27,7 +27,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
         public void SubscribeTwiceToSameChannelShouldFail()
         {
             // arrange
-            var subscriber = new ReliableSubscriber(null, _redis.GetConnection(), null);
+            var subscriber = new ReliableSubscriber(_redis.GetConnection(), null, null);
             _messageHandler.SetupGet(_ => _.Channel)
                 .Returns("testChannel");
 
@@ -42,7 +42,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
         public async Task SubscribeAsyncTwiceToSameChannelShouldFail()
         {
             // arrange
-            var subscriber = new ReliableSubscriber(null, _redis.GetConnection(), null);
+            var subscriber = new ReliableSubscriber(_redis.GetConnection(), null, null);
             _messageHandler.SetupGet(_ => _.Channel)
                 .Returns("testChannel");
 
@@ -69,7 +69,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
                 .Returns(false); // simulation of message in invalid format
 
 
-            var subscriber = new ReliableSubscriber(_log.Object, _redis.GetConnection(), _messageParser.Object);
+            var subscriber = new ReliableSubscriber(_redis.GetConnection(), _messageParser.Object, _log.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
             _messageHandler.SetupGet(_ => _.Channel)
@@ -106,7 +106,7 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
                 .Returns("testChannel");
             _messageHandler.Setup(_ => _.HandleMessage(It.IsAny<Message>()));
 
-            var subscriber = new ReliableSubscriber(_log.Object, _redis.GetConnection(), _messageParser.Object);
+            var subscriber = new ReliableSubscriber(_redis.GetConnection(), _messageParser.Object, _log.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
             // act
