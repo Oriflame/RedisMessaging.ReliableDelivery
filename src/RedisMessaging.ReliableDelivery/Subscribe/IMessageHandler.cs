@@ -7,5 +7,6 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
         RedisChannel Channel { get; }
 
         void HandleMessage(Message message);
+        void HandleNewestMessages();
     }
 }

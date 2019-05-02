@@ -34,6 +34,11 @@ namespace RedisMessaging.ReliableDelivery.Tests
                     _innerMessageHandler.HandleMessage(message);
                 }
             }
+
+            void IMessageHandler.HandleNewestMessages()
+            {
+                throw new NotImplementedException();
+            }
         }
 
         private readonly ITestOutputHelper _output;
@@ -63,7 +68,7 @@ namespace RedisMessaging.ReliableDelivery.Tests
             // arrange
             var publisher = new ReliablePublisher(_redis.GetConnection());
             var messageParser = new MessageParser();
-            var subscriber = new ReliableSubscriber(_subscriberConnection, messageParser, null);
+            var subscriber = new ReliableSubscriber(_subscriberConnection, messageParser);
             var channelName = nameof(SubscribeLoadTest) + RandomSuffix;
             var testMessage = JsonConvert.SerializeObject(new { myKey = "test value's" });
 
@@ -114,7 +119,7 @@ namespace RedisMessaging.ReliableDelivery.Tests
                 .ToList();
 
             // assert
-            Assert.Equal(2, savedMessages.Count());
+            Assert.Equal(2, savedMessages.Count);
         }
 
         [Fact]

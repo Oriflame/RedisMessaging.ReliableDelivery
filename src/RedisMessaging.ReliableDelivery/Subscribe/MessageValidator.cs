@@ -4,7 +4,7 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
 {
     public class MessageValidator : IMessageValidator
     {
-        protected internal long LastMessageId { get; private set; }
+        public long LastMessageId { get; private set; }
 
         /// <inheritdoc />
         public virtual IMessageValidationResult Validate(Message message)

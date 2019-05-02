@@ -24,6 +24,8 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
                 _errorsCollector = errorsCollector;
             }
 
+            public IEnumerable<Message> NewestMessages { get; set; }
+
             protected override void HandleMessageImpl(Message message)
             {
                 if (_isRunning)
@@ -39,6 +41,11 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
 
                 _messagesCollector.AddLast(message);
                 _isRunning = false;
+            }
+
+            protected override IEnumerable<Message> GetNewestMessages()
+            {
+                return NewestMessages;
             }
         }
 
@@ -77,7 +84,8 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             // act
             var messages = new[] { message4, message2 };
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessages(messages));
+            messageHandler.NewestMessages = messages;
+            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleNewestMessages());
             Thread.Sleep(1);
             ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message1));
             Thread.Sleep(100 * (4+1+2) + 5);
@@ -108,9 +116,10 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             // act
             var messages = new[] { message1, message2 };
+            messageHandler.NewestMessages = messages;
             ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message4));
             Thread.Sleep(1);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessages(messages));
+            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleNewestMessages());
             Thread.Sleep(100 * (4+1+2) + 5);
 
             // assert
@@ -146,9 +155,12 @@ namespace RedisMessaging.ReliableDelivery.Tests.Subscribe
                 messageLoader.Object);
 
             var messages = new[] { message1A, message2 };
+            messageLoader.Setup(_ => _.GetMessages("test-channel", It.IsAny<long>(), long.MaxValue))
+                .Returns(messages);
+            messageHandler.HandleMessage(message1);
             ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message1));
             Thread.Sleep(1);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessages(messages));
+            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleNewestMessages());
             Thread.Sleep(100);
 
             // assert

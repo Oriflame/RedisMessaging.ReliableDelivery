@@ -38,8 +38,9 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
             }
         }
 
-        public void HandleMessages(IEnumerable<Message> messages)
+        public void HandleNewestMessages()
         {
+            var messages = GetNewestMessages();
             lock (_lock)
             {
                 foreach (var message in messages)
@@ -47,6 +48,12 @@ namespace RedisMessaging.ReliableDelivery.Subscribe
                     HandleMessageImpl(message);
                 }
             }
+        }
+
+        protected virtual IEnumerable<Message> GetNewestMessages()
+        {
+            var fromMessageId = _messageValidator.LastMessageId + 1;
+            return _messageLoader.GetMessages(Channel, fromMessageId);
         }
 
         protected virtual void HandleMessageImpl(Message message)
