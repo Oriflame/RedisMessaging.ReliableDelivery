@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="SonarQube - Ori.Common.Ori.Common.Clustering Ori.Common.RuleSet" ToolsVersion="15.0">
+  <Include Path="..\..\.sonarlint\ori.common.ori.common.clusteringcsharp.ruleset" Action="Default" />
+</RuleSet>
