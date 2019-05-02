@@ -1,2 +1,2 @@
 # RedisMessaging.ReliableDelivery
-REDIS PU/SUB reliable delivery mediator
+REDIS PUB/SUB reliable delivery mediator
