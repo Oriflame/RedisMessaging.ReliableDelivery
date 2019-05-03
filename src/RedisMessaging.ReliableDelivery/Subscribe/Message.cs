@@ -26,7 +26,7 @@
 
         public bool Equals(Message other)
         {
-            return Id == other.Id;
+            return Id == other.Id && string.Equals(Content, other.Content);
         }
 
         public override int GetHashCode()
