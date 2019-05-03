@@ -31,7 +31,10 @@
 
         public override int GetHashCode()
         {
-            return Id.GetHashCode();
+            unchecked
+            {
+                return (Id.GetHashCode() * 397) ^ (Content?.GetHashCode() ?? 0);
+            }
         }
 
         public static bool operator ==(Message left, Message right)
