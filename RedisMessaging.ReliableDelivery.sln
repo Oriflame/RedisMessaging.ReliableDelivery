@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisMessaging.ReliableDelivery", "src\RedisMessaging.ReliableDelivery\RedisMessaging.ReliableDelivery.csproj", "{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oriflame.RedisMessaging.ReliableDelivery", "src\Oriflame.RedisMessaging.ReliableDelivery\Oriflame.RedisMessaging.ReliableDelivery.csproj", "{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{FB79D9FE-F411-46F9-9CA3-C2A40096D7C4}"
 EndProject
@@ -18,7 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisMessaging.ReliableDelivery.Tests", "test\RedisMessaging.ReliableDelivery.Tests\RedisMessaging.ReliableDelivery.Tests.csproj", "{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oriflame.RedisMessaging.ReliableDelivery.Tests", "test\Oriflame.RedisMessaging.ReliableDelivery.Tests\Oriflame.RedisMessaging.ReliableDelivery.Tests.csproj", "{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
