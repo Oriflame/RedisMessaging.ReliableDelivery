@@ -8,6 +8,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>oriflame redis publish subscribe reliable guaranteed delivery failover pubsub messaging</PackageTags>
     <ProjectGuid>{BE5D5D0E-CD40-43A2-92EB-7D0F2BE8222A}</ProjectGuid>
+    <PackageDescription>Extends Redis publish/subscribe so that potentially lost messages can be recovered</PackageDescription>
   </PropertyGroup>
 
   <PropertyGroup>
