@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace RedisMessaging.ReliableDelivery.Publish
+namespace Oriflame.RedisMessaging.ReliableDelivery.Publish
 {
     public interface IReliablePublisher
     {
