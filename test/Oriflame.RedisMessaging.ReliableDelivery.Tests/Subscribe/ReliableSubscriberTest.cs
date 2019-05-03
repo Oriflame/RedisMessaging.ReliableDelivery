@@ -4,12 +4,35 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Oriflame.RedisMessaging.ReliableDelivery.Subscribe;
+using StackExchange.Redis;
 using Xunit;
 
 namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 {
     public class ReliableSubscriberTest : IClassFixture<RedisFixture>
     {
+        private class ReliableSubscriberTraceable : ReliableSubscriber
+        {
+            public ReliableSubscriberTraceable(
+                IConnectionMultiplexer connectionMultiplexer,
+                IMessageParser messageParser,
+                ILogger<ReliableSubscriber> log = null) : base(connectionMultiplexer, messageParser, log)
+            {
+            }
+
+            public Exception LastException { get; private set; }
+
+            public long ExceptionsCount { get; private set; }
+
+            protected override bool OnMessageHandlingException(Exception exception, RedisValue rawMessage)
+            {
+                ++ExceptionsCount;
+                LastException = exception;
+
+                return base.OnMessageHandlingException(exception, rawMessage);
+            }
+        }
+
         private readonly RedisFixture _redis;
         private readonly Mock<IMessageParser> _messageParser;
         private readonly Mock<ILogger<ReliableSubscriber>> _log;
@@ -27,7 +50,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         public void SubscribeTwiceToSameChannelShouldFail()
         {
             // arrange
-            var subscriber = new ReliableSubscriber(_redis.GetConnection(), null, null);
+            var subscriber = new ReliableSubscriber(_redis.GetConnection(), null);
             _messageHandler.SetupGet(_ => _.Channel)
                 .Returns("testChannel");
 
@@ -42,7 +65,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         public async Task SubscribeAsyncTwiceToSameChannelShouldFail()
         {
             // arrange
-            var subscriber = new ReliableSubscriber(_redis.GetConnection(), null, null);
+            var subscriber = new ReliableSubscriber(_redis.GetConnection(), null);
             _messageHandler.SetupGet(_ => _.Channel)
                 .Returns("testChannel");
 
@@ -69,7 +92,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
                 .Returns(false); // simulation of message in invalid format
 
 
-            var subscriber = new ReliableSubscriber(_redis.GetConnection(), _messageParser.Object, _log.Object);
+            var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, _log.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
             _messageHandler.SetupGet(_ => _.Channel)
@@ -94,7 +117,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         }
 
         [Fact]
-        public void MessageINValidFormatShouldInvokeMessageHandler()
+        public void MessageWithValidFormatShouldInvokeMessageHandler()
         {
             // arrange
             var messageId = 123;
@@ -106,7 +129,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
                 .Returns("testChannel");
             _messageHandler.Setup(_ => _.HandleMessage(It.IsAny<Message>()));
 
-            var subscriber = new ReliableSubscriber(_redis.GetConnection(), _messageParser.Object, _log.Object);
+            var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, _log.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
             // act

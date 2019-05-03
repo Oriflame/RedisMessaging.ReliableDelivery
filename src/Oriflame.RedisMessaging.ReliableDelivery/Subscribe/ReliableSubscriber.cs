@@ -31,10 +31,6 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 
         protected virtual ISubscriber Subscriber => _connectionMultiplexer.GetSubscriber();
 
-        // for testing
-        internal Exception LastException { get; private set; }
-        internal long ExceptionsCount { get; private set; }
-        
         public void Subscribe(IMessageHandler messageHandler)
         {
             var channel = messageHandler.Channel;
@@ -123,6 +119,18 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 rawMessage);
         }
 
+        /// <returns>true if an exception is not handled and should be rethrown</returns>
+        protected virtual bool OnMessageHandlingException(Exception exception, RedisValue rawMessage)
+        {
+            // We intentionally log an exception here. Uncaught exception here will be blindly caught
+            // by a caller in StackExchange.Redis.ChannelMessageQueue::OnMessageSyncImpl()
+            const string errorMessage = "Received message processing failed";
+            _log.LogError(exception, errorMessage);
+
+            // we wish to throw an exception just for sure to a caller
+            return true;
+        }
+
         private void HandleMessage(RedisValue rawMessage, IMessageHandler handler)
         {
             try
@@ -134,19 +142,15 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 }
 
                 handler.HandleMessage(parsedMessage);
-                LastException = null;
             }
             catch (Exception exception)
             {
-                ++ExceptionsCount;
-                LastException = exception;
-                // We intentionally log an exception here. Uncaught exception here will be blindly caught
-                // by a caller in StackExchange.Redis.ChannelMessageQueue::OnMessageSyncImpl()
-                const string errorMessage = "Received message processing failed";
-                _log.LogError(exception, errorMessage);
+                var shouldRethrowException = OnMessageHandlingException(exception, rawMessage);
 
-                // we throw an exception just for sure to a caller
-                throw;
+                if (shouldRethrowException)
+                {
+                    throw;
+                }
             }
         }
     }
