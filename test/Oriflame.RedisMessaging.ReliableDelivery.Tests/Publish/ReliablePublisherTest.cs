@@ -41,10 +41,10 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Publish
             var publisher = new ReliablePublisher(_redis.GetConnection());
             var subscriber = _redis.GetConnection().GetSubscriber();  // standard, not-reliable subscriber
             var receivedMessage = "";
-            await subscriber.SubscribeAsync(channelName, (channel, message) => receivedMessage += message);
+            await subscriber.SubscribeAsync(channelName, (channel, message) => receivedMessage += message).ConfigureAwait(false);
 
             // act
-            await publisher.PublishAsync(channelName, "test message");
+            await publisher.PublishAsync(channelName, "test message").ConfigureAwait(false);
             Thread.Sleep(20);
 
             // assert

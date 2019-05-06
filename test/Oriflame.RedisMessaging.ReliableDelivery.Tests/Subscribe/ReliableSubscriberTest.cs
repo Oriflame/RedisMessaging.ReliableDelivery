@@ -58,7 +58,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             subscriber.Subscribe(_messageHandler.Object);
 
             var exception = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(_messageHandler.Object));
-            Assert.Contains("There already exists a handler subscribed to channel", exception.Message);
+            Assert.Contains("There already exists a handler subscribed to channel", exception.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Fact]
@@ -70,10 +70,10 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
                 .Returns("testChannel");
 
             // act & assert
-            await subscriber.SubscribeAsync(_messageHandler.Object);
+            await subscriber.SubscribeAsync(_messageHandler.Object).ConfigureAwait(false);
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(() => subscriber.SubscribeAsync(_messageHandler.Object));
-            Assert.Contains("There already exists a handler subscribed to channel", exception.Message);
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => subscriber.SubscribeAsync(_messageHandler.Object)).ConfigureAwait(false);
+            Assert.Contains("There already exists a handler subscribed to channel", exception.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Fact]

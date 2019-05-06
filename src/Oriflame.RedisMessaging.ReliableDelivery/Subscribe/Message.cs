@@ -1,6 +1,8 @@
-﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
+﻿using System;
+
+namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 {
-    public readonly struct Message
+    public readonly struct Message : IEquatable<Message>
     {
         public long Id { get; }
         public string Content { get; }
@@ -26,7 +28,7 @@
 
         public bool Equals(Message other)
         {
-            return Id == other.Id && string.Equals(Content, other.Content);
+            return Id == other.Id && string.Equals(Content, other.Content, StringComparison.InvariantCulture);
         }
 
         public override int GetHashCode()

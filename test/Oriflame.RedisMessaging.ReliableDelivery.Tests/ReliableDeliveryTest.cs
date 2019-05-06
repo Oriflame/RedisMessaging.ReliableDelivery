@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Newtonsoft.Json;
@@ -63,7 +64,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
             _output.WriteLine($"Running redis for {GetType().Name} on {endpoint}");
         }
 
-        private static string RandomSuffix => DateTime.Now.Ticks.ToString();
+        private static string RandomSuffix => DateTime.Now.Ticks.ToString(CultureInfo.InvariantCulture);
 
         [Fact]
         public void SubscribeLoadTest()

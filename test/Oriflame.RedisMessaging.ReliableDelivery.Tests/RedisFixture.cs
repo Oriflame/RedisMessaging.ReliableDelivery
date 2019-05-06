@@ -3,7 +3,7 @@ using StackExchange.Redis;
 
 namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
 {
-    public class RedisFixture : IDisposable
+    public sealed class RedisFixture : IDisposable
     {
         private IConnectionMultiplexer _connectionMultiplexer;
         private readonly object _lock;
