@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation;
 using StackExchange.Redis;
 
 namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
@@ -38,7 +39,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             }
         }
 
-        public void HandleNewestMessages()
+        public void CheckMissedMessages()
         {
             var messages = GetNewestMessages();
             lock (_lock)
@@ -61,14 +62,14 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             var validationResult = _messageValidator.Validate(message);
             switch (validationResult)
             {
-                case var result when MessageValidationResult.Success.Equals(result):
+                case SuccessValidationResult _:
                     OnSuccessfulMessage(message);
                     break;
                 case ValidationResultForMissingMessages missingMessagesResult:
                     var lastProcessedMessageId = missingMessagesResult.LastProcessedMessageId;
                     OnMissingMessages(message, lastProcessedMessageId);
                     break;
-                case var result when MessageValidationResult.MessageAgain.Equals(result):
+                case AlreadyProcessedValidationResult _:
                     OnMessageAgain(message);
                     break;
                 default:

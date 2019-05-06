@@ -2,6 +2,7 @@
 using System.Threading;
 using Moq;
 using Oriflame.RedisMessaging.ReliableDelivery.Subscribe;
+using Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation;
 using StackExchange.Redis;
 using Xunit;
 
@@ -85,7 +86,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             // act
             var messages = new[] { message4, message2 };
             messageHandler.NewestMessages = messages;
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleNewestMessages());
+            ThreadPool.QueueUserWorkItem(state => messageHandler.CheckMissedMessages());
             Thread.Sleep(1);
             ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message1));
             Thread.Sleep(100 * (4+1+2) + 5);
@@ -119,7 +120,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             messageHandler.NewestMessages = messages;
             ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message4));
             Thread.Sleep(1);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleNewestMessages());
+            ThreadPool.QueueUserWorkItem(state => messageHandler.CheckMissedMessages());
             Thread.Sleep(100 * (4+1+2) + 5);
 
             // assert
@@ -160,7 +161,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             messageHandler.HandleMessage(message1);
             ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message1));
             Thread.Sleep(1);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleNewestMessages());
+            ThreadPool.QueueUserWorkItem(state => messageHandler.CheckMissedMessages());
             Thread.Sleep(100);
 
             // assert

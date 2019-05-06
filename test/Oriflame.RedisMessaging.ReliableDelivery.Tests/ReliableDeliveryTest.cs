@@ -5,6 +5,7 @@ using System.Threading;
 using Newtonsoft.Json;
 using Oriflame.RedisMessaging.ReliableDelivery.Publish;
 using Oriflame.RedisMessaging.ReliableDelivery.Subscribe;
+using Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation;
 using StackExchange.Redis;
 using Xunit;
 using Xunit.Abstractions;
@@ -35,7 +36,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
                 }
             }
 
-            void IMessageHandler.HandleNewestMessages()
+            void IMessageHandler.CheckMissedMessages()
             {
                 throw new NotImplementedException();
             }
