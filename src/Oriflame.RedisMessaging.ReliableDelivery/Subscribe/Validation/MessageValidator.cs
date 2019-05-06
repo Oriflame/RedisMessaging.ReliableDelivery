@@ -1,4 +1,4 @@
-﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
+﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation
 {
     public class MessageValidator : IMessageValidator
     {
@@ -17,12 +17,12 @@
             // then we cannot validate a message yet
             if (previousMessageId == default(long))
             {
-                return MessageValidationResult.Success;
+                return SuccessValidationResult.Instance;
             }
 
             if (IsAlreadyProcessed(previousMessageId, message.Id))
             {
-                return MessageValidationResult.MessageAgain;
+                return AlreadyProcessedValidationResult.Instance;
             }
 
             if (IsMessageMissing(previousMessageId, message.Id))
@@ -30,7 +30,7 @@
                 return new ValidationResultForMissingMessages(previousMessageId);
             }
 
-            return MessageValidationResult.Success;
+            return SuccessValidationResult.Instance;
 
         }
 

@@ -69,6 +69,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             queue.OnMessage(channelMessage => HandleMessage(channelMessage.Message, handler));
         }
 
+        // TODO throw exception if channel not subscribed
         public void Unsubscribe(string channel)
         {
             if (_queues.TryRemove(channel, out var queue))
@@ -77,6 +78,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             }
         }
 
+        // TODO throw exception if channel not subscribed
         public Task UnsubscribeAsync(string channel)
         {
             if (_queues.TryRemove(channel, out var queue))

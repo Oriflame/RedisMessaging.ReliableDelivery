@@ -1,4 +1,4 @@
-﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
+﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation
 {
     /// <summary>
     /// Validator providing verification if a message received.

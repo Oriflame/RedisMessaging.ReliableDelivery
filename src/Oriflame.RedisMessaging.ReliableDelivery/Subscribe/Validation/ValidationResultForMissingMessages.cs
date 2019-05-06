@@ -1,6 +1,6 @@
-﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
+﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation
 {
-    public struct ValidationResultForMissingMessages : IMessageValidationResult
+    public readonly struct ValidationResultForMissingMessages : IMessageValidationResult
     {
         /// <summary>
         /// Last successfully processed message id
