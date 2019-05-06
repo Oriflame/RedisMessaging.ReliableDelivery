@@ -40,6 +40,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
             {
                 throw new NotImplementedException();
             }
+
+            public DateTime LastActivityAt => _innerMessageHandler.LastActivityAt;
         }
 
         private readonly ITestOutputHelper _output;

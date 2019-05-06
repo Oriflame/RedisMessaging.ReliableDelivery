@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Moq;
 using Oriflame.RedisMessaging.ReliableDelivery.Subscribe;
@@ -65,9 +66,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             var successfullyProcessedMessages = new List<Message>();
             var messageHandler = new MessageHandler("test-channel", msg => successfullyProcessedMessages.Add(msg), messageValidator.Object, messageLoader.Object);
 
+            var beforeTestTime = DateTime.Now;
             messageHandler.HandleMessage(new Message(123, "message"));
 
             // assert
+            Assert.True(beforeTestTime < messageHandler.LastActivityAt);
             Assert.Equal(2, successfullyProcessedMessages.Count);
             messageLoader.Verify(_ => _.GetMessages("test-channel", 2, 122));
         }

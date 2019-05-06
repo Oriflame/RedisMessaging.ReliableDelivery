@@ -17,6 +17,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 
         public RedisChannel Channel { get; }
 
+        public DateTime LastActivityAt { get; private set; }
+
         public MessageHandler(
             RedisChannel channel,
             Action<Message> onSuccessMessage,
@@ -36,8 +38,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             lock (_lock)
             {
                 HandleMessageImpl(message);
+                LastActivityAt = Now;
             }
         }
+
+        protected virtual DateTime Now => DateTime.Now;
 
         public void CheckMissedMessages()
         {
@@ -48,6 +53,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 {
                     HandleMessageImpl(message);
                 }
+
+                LastActivityAt = Now;
             }
         }
 
