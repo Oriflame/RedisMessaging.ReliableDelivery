@@ -15,6 +15,23 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         }
 
         [Fact]
+        public void GetMessagesWhenChannelNotInitialized()
+        {
+            // arrange
+            var connectionMultiplexer = _redis.GetConnection();
+            var database = connectionMultiplexer.GetDatabase();
+            database.KeyDelete("ch:{test-channel}:id"); // ensure key is not in Redis to simulate not-initialized channel
+
+            // act
+            var loader = new MessageLoader(connectionMultiplexer);
+            var messages = loader.GetMessages("test-channel", 1, 30)
+                .ToList();
+
+            // assert
+            Assert.Empty(messages);
+        }
+
+        [Fact]
         public void GetMessages()
         {
             // arrange
