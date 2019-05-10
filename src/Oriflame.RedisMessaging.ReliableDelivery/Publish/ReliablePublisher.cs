@@ -5,8 +5,17 @@ using StackExchange.Redis;
 
 namespace Oriflame.RedisMessaging.ReliableDelivery.Publish
 {
+    /// <summary>
+    /// Represents an object responsible for publishing messages via Redis channel.
+    /// Additionally, during publishing, Redis extends a message being published
+    /// with unique sequence number to be used later in <see cref="Oriflame.RedisMessaging.ReliableDelivery.Subscribe.ReliableSubscriber"/>
+    /// that checks order of a message. This publisher also stores the message in Redis for limited time, <seealso cref="MessageExpiration"/>
+    /// </summary>
     public class ReliablePublisher : IReliablePublisher
     {
+        /// <summary>
+        /// A character separating message sequence number and a message content being published
+        /// </summary>
         public const char MessagePartSeparator = ':';
         private static readonly LuaScript _publishScript = LuaScript.Prepare(TrimScript(""
                                          + "local message = @message\n"
@@ -28,21 +37,33 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Publish
 
         private readonly IConnectionMultiplexer _connectionMultiplexer;
 
+        /// <summary>
+        /// Redis database into that messages are stored
+        /// </summary>
         protected virtual IDatabase Database => _connectionMultiplexer.GetDatabase();
 
+        /// <summary>
+        /// Creates a publisher responsible for reliable messages delivery
+        /// </summary>
+        /// <param name="connectionMultiplexer">A multiplexer providing low-level communication with Redis server</param>
         public ReliablePublisher(IConnectionMultiplexer connectionMultiplexer)
         {
             _connectionMultiplexer = connectionMultiplexer;
         }
 
+        /// <summary>
+        /// Time-to live (TTL) of a message stored in Redis server. Default is 10 minutes.
+        /// </summary>
         public TimeSpan MessageExpiration { get; set; } = TimeSpan.FromMinutes(10);
 
+        /// <inheritdoc />
         public void Publish(string channel, string message)
         {
             var parameters = CreateScriptParameters(channel, message);
             Database.ScriptEvaluate(_publishScript, parameters, CommandFlags.DemandMaster | CommandFlags.PreferMaster | CommandFlags.NoRedirect);
         }
 
+        /// <inheritdoc />
         public Task PublishAsync(string channel, string message)
         {
             var parameters = CreateScriptParameters(channel, message);
