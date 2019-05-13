@@ -48,11 +48,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         {
             _log.LogDebug("Checking missed messages");
             var messages = GetNewestMessages();
+            int messagesCount = 0;
+            long firstMessageId = 0;
+            long lastMessageId = 0;
             lock (_lock)
             {
-                int messagesCount = 0;
-                long firstMessageId = 0;
-                long lastMessageId = 0;
                 foreach (var message in messages)
                 {
                     if (messagesCount == 0)
@@ -65,15 +65,15 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 }
 
                 LastActivityAt = Now;
-                if (messagesCount > 0)
-                {
-                    _log.LogWarning("Missed messages processed: messagesCount={messagesCount}, IDs range=<{firstMessageId}, {lastMessageId}>",
-                        messagesCount, firstMessageId, lastMessageId);
-                }
-                else
-                {
-                    _log.LogInformation("Checked missed messages: no messages missed found.");
-                }
+            }
+            if (messagesCount > 0)
+            {
+                _log.LogWarning("Missed messages processed: messagesCount={messagesCount}, IDs range=<{firstMessageId}, {lastMessageId}>",
+                    messagesCount, firstMessageId, lastMessageId);
+            }
+            else
+            {
+                _log.LogInformation("Checked missed messages: no messages missed found.");
             }
         }
 

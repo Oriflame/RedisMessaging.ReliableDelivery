@@ -90,7 +90,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             var messages = new[] { message4, message2 };
             messageHandler.NewestMessages = messages;
             ThreadPool.QueueUserWorkItem(state => messageHandler.CheckMissedMessages());
-            Thread.Sleep(1);
+            Thread.Sleep(2);
             ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message1));
             Thread.Sleep(100 * (4+1+2) + 5);
 
