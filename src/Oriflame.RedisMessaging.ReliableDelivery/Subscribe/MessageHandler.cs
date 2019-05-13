@@ -46,15 +46,34 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 
         public void CheckMissedMessages()
         {
+            _log.LogDebug("Checking missed messages");
             var messages = GetNewestMessages();
             lock (_lock)
             {
+                int messagesCount = 0;
+                long firstMessageId = 0;
+                long lastMessageId = 0;
                 foreach (var message in messages)
                 {
+                    if (messagesCount == 0)
+                    {
+                        firstMessageId = message.Id;
+                    }
                     HandleMessageImpl(message);
+                    ++messagesCount;
+                    lastMessageId = message.Id;
                 }
 
                 LastActivityAt = Now;
+                if (messagesCount > 0)
+                {
+                    _log.LogWarning("Missed messages processed: messagesCount={messagesCount}, IDs range=<{firstMessageId}, {lastMessageId}>",
+                        messagesCount, firstMessageId, lastMessageId);
+                }
+                else
+                {
+                    _log.LogInformation("Checked missed messages: no messages missed found.");
+                }
             }
         }
 
