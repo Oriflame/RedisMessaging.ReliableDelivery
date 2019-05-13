@@ -1,5 +1,8 @@
 ﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 {
+    /// <summary>
+    /// Provides analyzing anf parsing a raw message received from Redis subscriber
+    /// </summary>
     public interface IMessageParser
     {
         /// <param name="message">raw message delivered from Redis</param>

@@ -6,6 +6,7 @@ using Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation;
 
 namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 {
+    /// <inheritdoc />
     public class MessageHandler : IMessageHandler
     {
         private readonly Action<Message> _onSuccessMessage;

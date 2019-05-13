@@ -3,6 +3,7 @@ using StackExchange.Redis;
 
 namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 {
+    /// <inheritdoc />
     public class MessageLoader : IMessageLoader
     {
         private readonly IConnectionMultiplexer _connectionMultiplexer;
@@ -27,11 +28,16 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                                                                                  "end\n" +
                                                                                  "return result");
 
+        /// <summary>
+        /// Creates a <see cref="MessageLoader"/> to get data from Redis server
+        /// </summary>
+        /// <param name="connectionMultiplexer">A multiplexer providing low-level communication with Redis server</param>
         public MessageLoader(IConnectionMultiplexer connectionMultiplexer)
         {
             _connectionMultiplexer = connectionMultiplexer;
         }
 
+        /// <inheritdoc />
         public IEnumerable<Message> GetMessages(string channelName, long fromMessageId, long toMessageId = long.MaxValue)
         {
             // TODO get messages in batches
