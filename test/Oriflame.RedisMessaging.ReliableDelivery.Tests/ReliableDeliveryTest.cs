@@ -24,7 +24,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
                 _innerMessageHandler = innerMessageHandler;
             }
 
-            public RedisChannel Channel => _innerMessageHandler.Channel;
+            public string Channel => _innerMessageHandler.Channel;
 
             public bool IsEnabled { get; set; } = true;
 

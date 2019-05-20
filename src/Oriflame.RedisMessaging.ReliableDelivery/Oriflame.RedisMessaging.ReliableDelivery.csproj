@@ -12,8 +12,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <CodeAnalysisRuleSet>Ori.Common.Clustering.Events.Redis.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>RedisMessaging.ReliableDelivery.ruleset</CodeAnalysisRuleSet>
     <LangVersion>7.2</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+      <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

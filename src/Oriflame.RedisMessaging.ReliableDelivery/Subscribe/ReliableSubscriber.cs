@@ -19,6 +19,13 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         private readonly IConnectionMultiplexer _connectionMultiplexer;
         private readonly ConcurrentDictionary<string, ChannelMessageQueue> _queues = new ConcurrentDictionary<string, ChannelMessageQueue>();
 
+        /// <summary>
+        /// Creates an object responsible for receiving messages and handling them.
+        /// It is able to detect that some messages were potentially lost.
+        /// </summary>
+        /// <param name="connectionMultiplexer">A multiplexer providing low-level communication with Redis server</param>
+        /// <param name="messageParser">an object responsible for analyzing a raw string message and parsing it to a structured <see cref="Message"/></param>
+        /// <param name="log">logger tracing internal activity of this subscriber</param>
         public ReliableSubscriber(
             IConnectionMultiplexer connectionMultiplexer,
             IMessageParser messageParser,
@@ -29,8 +36,14 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             _log = log ?? NullLogger<ReliableSubscriber>.Instance;
         }
 
+        /// <summary>
+        /// Raw <see cref="ISubscriber"/> providing low-level communication
+        /// from/to Redis server.
+        /// </summary>
         protected virtual ISubscriber Subscriber => _connectionMultiplexer.GetSubscriber();
 
+        /// <inheritdoc />
+        /// <exception cref="ArgumentException">if a handler to a same channel is already registered</exception>
         public void Subscribe(IMessageHandler messageHandler)
         {
             var channel = messageHandler.Channel;
@@ -49,6 +62,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             }
         }
 
+        /// <inheritdoc />
+        /// <exception cref="ArgumentException">if a handler to a same channel is already registered</exception>
         public async Task SubscribeAsync(IMessageHandler handler)
         {
             var channel = handler.Channel;
@@ -69,18 +84,20 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             queue.OnMessage(channelMessage => HandleMessage(channelMessage.Message, handler));
         }
 
-        // TODO throw exception if channel not subscribed
+        /// <inheritdoc />
         public void Unsubscribe(string channel)
         {
+            // TODO throw exception if channel not subscribed
             if (_queues.TryRemove(channel, out var queue))
             {
                 queue.Unsubscribe();
             }
         }
 
-        // TODO throw exception if channel not subscribed
+        /// <inheritdoc />
         public Task UnsubscribeAsync(string channel)
         {
+            // TODO throw exception if channel not subscribed
             if (_queues.TryRemove(channel, out var queue))
             {
                 return queue.UnsubscribeAsync();
@@ -89,6 +106,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc />
         public void UnsubscribeAll()
         {
             foreach (var queue in _queues)
@@ -99,6 +117,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             _queues.Clear();
         }
 
+        /// <inheritdoc />
         public Task UnsubscribeAllAsync()
         {
             var tasks = new List<Task>();
@@ -112,8 +131,13 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             return Task.WhenAll(tasks);
         }
 
-
-        protected virtual void OnInvalidMessageFormat(string rawMessage, IMessageHandler handler)
+        /// <summary>
+        /// Method raised when a raw string message received is not in a valid format,
+        /// e.g. it does not contain `sequence number` and `message content`
+        /// </summary>
+        /// <param name="rawMessage">a message sent from Redis server</param>
+        /// <param name="handler">message handler processing a message if it was parsed successfully</param>
+        protected virtual void OnInvalidMessageFormat(RedisValue rawMessage, IMessageHandler handler)
         {
             _log.LogWarning(
                 "Invalid message format in channel '{Channel}'. rawMessage={RawMessage}",
@@ -121,7 +145,12 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 rawMessage);
         }
 
-        /// <returns>true if an exception is not handled and should be rethrown</returns>
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="exception">exception that was thrown while an already parsed message was in the middle of processing</param>
+        /// <param name="rawMessage">a message sent from Redis server</param>
+        //// <returns>true if an exception is not handled and should be rethrown</returns>
         protected virtual bool OnMessageHandlingException(Exception exception, RedisValue rawMessage)
         {
             // We intentionally log an exception here. Uncaught exception here will be blindly caught
