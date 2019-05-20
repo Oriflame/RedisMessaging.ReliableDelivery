@@ -1,8 +1,8 @@
 # Oriflame.RedisMessaging.ReliableDelivery
 
-This library is written in .NET standard and provides reliability to delivering messages via Redis. By design Redis pub/sub message delivery is not reliable so it can happen that some messages can be lost due to network issues or they can be delivered more than once in case of Redis replication failure.
+This library is written in .NET standard and provides reliability to delivering messages via Redis. By design Redis pub/sub message delivery is not reliable so it can happen that some messages can get lost due to network issues or they can be delivered more than once in case of Redis replication failure.
 
-This library adds a lightweight infrastructure to handle such failover scenarios.
+This library adds a lightweight infrastructure to handle such error scenarios.
 
 ## Download Nuget package
 
@@ -14,10 +14,6 @@ This library adds a lightweight infrastructure to handle such failover scenarios
 // initialization
 var connectionMultiplexer = ConnectionMultiplexer.Connect("connection options");
 
-// create reliable publisher
-var messageExpiration = TimeSpan.FromMinutes(10);
-var reliablePublisher = connectionMultiplexer.GetSubscriber().AddReliablePublish(messageExpiration);
-
 // create reliable subscriber
 var messageHandler = new MessageHandler(
     channel: "channel-name",
@@ -27,12 +23,19 @@ var messageHandler = new MessageHandler(
     },
     messageValidator: new MessageValidator(),
     messageLoader: new MessageLoader(connectionMultiplexer));
+
 connectionMultiplexer.GetSubscriber().AddReliableSubscriber(
     messageHandler: messageHandler,
     messageParser: new MessageParser());
 
+// create reliable publisher
+var messageExpiration = TimeSpan.FromMinutes(10);
+var reliablePublisher = connectionMultiplexer.GetSubscriber().AddReliablePublisher(messageExpiration);
+
 // publishing a message
-reliablePublisher.Publish("channel-name", "message-content");```
+reliablePublisher.Publish("channel-name", "message-content");
+
+// TBD Check message handler integrity
 ```
 
 ## How It Works
