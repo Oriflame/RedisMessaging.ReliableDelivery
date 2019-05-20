@@ -73,7 +73,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             }
             else
             {
-                _log.LogInformation("Checked missed messages: no messages missed found.");
+                // TODO Activity counter that will provide information about how many times this method was called
+                _log.LogDebug("Checked missed messages: no messages missed found.");
             }
         }
 
