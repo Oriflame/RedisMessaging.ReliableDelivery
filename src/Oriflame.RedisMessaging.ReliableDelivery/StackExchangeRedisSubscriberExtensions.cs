@@ -57,11 +57,4 @@ namespace Oriflame.RedisMessaging.ReliableDelivery
             return new ReliableSubscriber(subscriber.Multiplexer, messageParser, subscriberLog);
         }
     }
-
-    public interface ISubscriberBuilder
-    {
-        ISubscriberBuilder CheckMissedMessagesWith(Func<DateTime, bool> checker);
-
-        void Run();
-    }
 }
