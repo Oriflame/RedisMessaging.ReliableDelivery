@@ -42,7 +42,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             }
         }
 
-        protected virtual DateTime Now => DateTime.Now;
+        protected virtual DateTime Now => DateTime.UtcNow;
 
         public void CheckMissedMessages()
         {
