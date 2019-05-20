@@ -5,6 +5,7 @@ using System.Threading;
 using Newtonsoft.Json;
 using Oriflame.RedisMessaging.ReliableDelivery.Publish;
 using Oriflame.RedisMessaging.ReliableDelivery.Subscribe;
+using Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation;
 using StackExchange.Redis;
 using Xunit;
 using Xunit.Abstractions;
@@ -34,6 +35,13 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
                     _innerMessageHandler.HandleMessage(message);
                 }
             }
+
+            void IMessageHandler.CheckMissedMessages()
+            {
+                throw new NotImplementedException();
+            }
+
+            public DateTime LastActivityAt => _innerMessageHandler.LastActivityAt;
         }
 
         private readonly ITestOutputHelper _output;
@@ -63,7 +71,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
             // arrange
             var publisher = new ReliablePublisher(_redis.GetConnection());
             var messageParser = new MessageParser();
-            var subscriber = new ReliableSubscriber(_subscriberConnection, messageParser, null);
+            var subscriber = new ReliableSubscriber(_subscriberConnection, messageParser);
             var channelName = nameof(SubscribeLoadTest) + RandomSuffix;
             var testMessage = JsonConvert.SerializeObject(new { myKey = "test value's" });
 
@@ -114,7 +122,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
                 .ToList();
 
             // assert
-            Assert.Equal(2, savedMessages.Count());
+            Assert.Equal(2, savedMessages.Count);
         }
 
         [Fact]

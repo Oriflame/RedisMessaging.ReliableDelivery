@@ -12,6 +12,9 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                                                                                  "local fromId = @fromId\n" +
                                                                                  "local toId = @toId\n" +
                                                                                  "local lastMessageId = redis.call('GET', 'ch:{'..channel..'}:id')\n" +
+                                                                                 "if lastMessageId == false then\n" + // channel was not initialized, hence no messages created yet
+                                                                                 "   return {}\n" +
+                                                                                 "end\n" +
                                                                                  "toId = math.min(toId, lastMessageId)\n" +
                                                                                  "local result = {}\n" +
                                                                                  "for id = fromId, toId, 1\n" +

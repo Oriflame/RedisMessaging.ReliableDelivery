@@ -1,6 +1,6 @@
 ﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 {
-    public struct Message
+    public readonly struct Message
     {
         public long Id { get; }
         public string Content { get; }

@@ -1,8 +1,8 @@
 ﻿<Project>
   <PropertyGroup>
-    <Authors>Oriflame Software Frameworks team, Petr Kozelek</Authors>
-    <Company>Oriflame Software s.r.o.</Company>
-    <Copyright>(c) Oriflame Software s.r.o.</Copyright>
+    <Authors>Oriflame Software</Authors>
+    <Company>Oriflame Software</Company>
+    <Copyright>(c) Oriflame Software</Copyright>
     <RepositoryUrl>https://github.com/Oriflame/RedisMessaging.ReliableDelivery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/Oriflame/RedisMessaging.ReliableDelivery</PackageProjectUrl>
