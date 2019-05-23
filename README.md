@@ -12,34 +12,45 @@ This library adds a lightweight infrastructure to handle such error scenarios.
 ## How to Use It
 ```csharp
 // initialization
-var connectionMultiplexer = ConnectionMultiplexer.Connect("connection options");
+var multiplexer = ConnectionMultiplexer.Connect("connection options");
 
-// create reliable subscriber
-var messageHandler = new MessageHandler(
-    channel: "channel-name",
-    onSuccessMessage: message =>
-    {
-        Trace.TraceInformation($"Message with ID={message.Id} was received as expected. Message content='{message.Content}'");
-    },
-    messageValidator: new MessageValidator(),
-    messageLoader: new MessageLoader(connectionMultiplexer));
+// subscribe to a reliable channel
+var channelIntegrityCheck = multiplexer.GetSubscriber()
+    .Reliably()
+    .Subscribe(
+        channel: "channel-name",
+        onExpectedMessage: (channel, message) => Trace.TraceInformation($"Message with ID={message.Id} was received as expected. Message content='{message.Content}'"),
+        onMissedMessage:,
+        onDuplicatedMessage:,
+        onMissingMessages:);
 
-connectionMultiplexer.GetSubscriber().AddReliableSubscriber(
-    messageHandler: messageHandler,
-    messageParser: new MessageParser());
+// publish to a reliable channel
+multiplexer.GetSubscriber()
+    .Reliably()
+    .Publish(
+        channel: "channel-name",
+        message: "message-content",
+        messageExpiration: TimeSpan.FromMinutes(10));
 
-// create reliable publisher
-var messageExpiration = TimeSpan.FromMinutes(10);
-var reliablePublisher = connectionMultiplexer.GetSubscriber().AddReliablePublisher(messageExpiration);
-
-// publishing a message
-reliablePublisher.Publish("channel-name", "message-content");
-
-// TBD Check message handler integrity
+// channel integrity check - optional
+// useful when delivering messages is not as frequent. In such a case
+// we can ensure manually that reliable subscriber is still able to receive messages.
+// Example:
+// if last processed message was earlier than 1sec ago
+// i.e. we did not receive messages within the last second
+if (channelIntegrityCheck.LastActivityAt < DateTime.UtcNow.AddSeconds(-1))
+{
+    // force reliable channel to get not processed messages
+    // from Redis server if there are some
+    channelIntegrityCheck.CheckForMissedMessages();
+}
 ```
 
 ## How It Works
+TODO
 
+### Limitations
+* Subscribing to channel patterns  is not supported
 
 ## Development
 [![Build status](https://oriflame.visualstudio.com/Ori.Common/_apis/build/status/Redis/RedisMessaging.ReliableDelivery-CD?label=Release+build&branchName=master)](https://oriflame.visualstudio.com/Ori.Common/_build/latest?definitionId=1324&branchName=master)

@@ -5,29 +5,17 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     /// <summary>
     /// Represents logic for processing received messages, both expected and unexpected (e.g. out of order)
     /// </summary>
-    public interface IMessageHandler
+    internal interface IMessageHandler
     {
         /// <summary>
-        /// name of a channel from that a message is received and processed
+        /// function called when an expected message is received, e.g. its sequence number is not out of order
         /// </summary>
-        string Channel { get; }
+        void OnExpectedMessage(string channel, Message message);
 
-        /// <summary>
-        /// Processes a received message
-        /// </summary>
-        /// <param name="message">received message that should be processed</param>
-        void HandleMessage(Message message);
+        void OnMissedMessage(string channel, Message message);
         
-        /// <summary>
-        /// Check whether there are some messages in Redis server pending,
-        /// i.e. they were not received and handled by this <see cref="IMessageHandler"/>
-        /// </summary>
-        void CheckMissedMessages();
+        void OnDuplicatedMessage(string channel, Message message);
 
-        /// <summary>
-        /// Date at which last message was processed either vua <see cref="HandleMessage"/>
-        /// or <see cref="CheckMissedMessages"/>
-        /// </summary>
-        DateTime LastActivityAt { get; }
+        void OnMissingMessages(string channel, long missingMessagesCount);
     }
 }

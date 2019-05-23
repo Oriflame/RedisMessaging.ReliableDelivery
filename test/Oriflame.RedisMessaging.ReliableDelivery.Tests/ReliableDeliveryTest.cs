@@ -2,10 +2,10 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Oriflame.RedisMessaging.ReliableDelivery.Publish;
 using Oriflame.RedisMessaging.ReliableDelivery.Subscribe;
-using Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation;
 using StackExchange.Redis;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,33 +15,24 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
     [Trait("Category", "Integration test")]
     public class ReliableDeliveryTest : IClassFixture<RedisFixture>
     {
-        private class MessageHandlerWrapper : IMessageHandler
+        private class TogglingSubscriber : ReliableSubscriber
         {
-            private readonly IMessageHandler _innerMessageHandler;
-
-            public MessageHandlerWrapper(IMessageHandler innerMessageHandler)
+            public TogglingSubscriber(
+                IConnectionMultiplexer connectionMultiplexer,
+                IMessageParser messageParser,
+                ILogger<ReliableSubscriber> log = null) : base(connectionMultiplexer, messageParser, log)
             {
-                _innerMessageHandler = innerMessageHandler;
             }
-
-            public string Channel => _innerMessageHandler.Channel;
 
             public bool IsEnabled { get; set; } = true;
 
-            public void HandleMessage(Message message)
+            protected override void HandleMessage(string channel, RedisValue rawMessage, IMessageProcessor processor)
             {
                 if (IsEnabled)
                 {
-                    _innerMessageHandler.HandleMessage(message);
+                    base.HandleMessage(channel, rawMessage, processor);
                 }
             }
-
-            void IMessageHandler.CheckMissedMessages()
-            {
-                throw new NotImplementedException();
-            }
-
-            public DateTime LastActivityAt => _innerMessageHandler.LastActivityAt;
         }
 
         private readonly ITestOutputHelper _output;
@@ -75,20 +66,15 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
             var channelName = nameof(SubscribeLoadTest) + RandomSuffix;
             var testMessage = JsonConvert.SerializeObject(new { myKey = "test value's" });
 
-            var messageValidator = new MessageValidator();
             int messagesReceivedCount = 0;
-            var messageHandler = new MessageHandler(
-                channelName,
-                message =>
-                {
-                    Interlocked.Increment(ref messagesReceivedCount);
-                },
-                messageValidator,
-                null
-                );
+
+            var messageHandler = new MessageHandler((channel, message) =>
+            {
+                Interlocked.Increment(ref messagesReceivedCount);
+            });
 
             // act
-            subscriber.Subscribe(messageHandler);
+            subscriber.Subscribe(channelName, messageHandler);
 
             const int messagesCount = 5000;
             var stopwatch = new Stopwatch();
@@ -126,31 +112,24 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
         }
 
         [Fact]
-        public void TestFailoverMissingMessages()
+        public void TestMissingMessages()
         {
             // arrange
             var connectionMultiplexer = _redis.GetConnection();
             var publisher = new ReliablePublisher(connectionMultiplexer);
-            var subscriber = new ReliableSubscriber(connectionMultiplexer, new MessageParser());
-            var loader = new MessageLoader(connectionMultiplexer);
-            var messageValidator = new MessageValidator();
+            var subscriber = new TogglingSubscriber(connectionMultiplexer, new MessageParser());
             int receivedMessagesCount = 0;
-            const string channelName = "test-channel-" + nameof(TestFailoverMissingMessages);
-            var messageHandler = new MessageHandler(
-                channelName,
-                msg => Interlocked.Increment(ref receivedMessagesCount),
-                messageValidator,
-                loader);
-            var messageHandlerWrapper = new MessageHandlerWrapper(messageHandler);
-            subscriber.Subscribe(messageHandlerWrapper);
+            const string channelName = "test-channel-" + nameof(TestMissingMessages);
+            var messageHandler = new MessageHandler((channel, msg) => Interlocked.Increment(ref receivedMessagesCount));
+            subscriber.Subscribe(channelName, messageHandler);
 
             // act
             publisher.Publish(channelName, "message1");
             Wait(10);
-            messageHandlerWrapper.IsEnabled = false; // simulation of disability to process messages
+            subscriber.IsEnabled = false; // simulation of disability to process messages
             publisher.Publish(channelName, "message2");
             Wait(10);
-            messageHandlerWrapper.IsEnabled = true;
+            subscriber.IsEnabled = true;
             publisher.Publish(channelName, "message3");
             Wait(10);
 

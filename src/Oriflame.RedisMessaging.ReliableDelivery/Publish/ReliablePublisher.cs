@@ -8,15 +8,18 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Publish
     /// <summary>
     /// Represents an object responsible for publishing messages via Redis channel.
     /// Additionally, during publishing, Redis extends a message being published
-    /// with unique sequence number to be used later in <see cref="Oriflame.RedisMessaging.ReliableDelivery.Subscribe.ReliableSubscriber"/>
-    /// that checks order of a message. This publisher also stores the message in Redis for limited time, <seealso cref="MessageExpiration"/>
+    /// with unique sequence number to be used later in <see cref="Subscribe.ReliableSubscriber"/>
+    /// that checks order of a message. This publisher also stores the message in Redis for limited time.
     /// </summary>
-    public class ReliablePublisher : IReliablePublisher
+    internal class ReliablePublisher : IReliablePublisher
     {
         /// <summary>
         /// A character separating message sequence number and a message content being published
         /// </summary>
         public const char MessagePartSeparator = ':';
+
+        private static readonly TimeSpan _defaultMessageExpiration = TimeSpan.FromMinutes(10);
+
         private static readonly LuaScript _publishScript = LuaScript.Prepare(TrimScript(""
                                          + "local message = @message\n"
                                          + "local channel = @channel\n"
@@ -51,32 +54,32 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Publish
             _connectionMultiplexer = connectionMultiplexer;
         }
 
-        /// <summary>
-        /// Time-to live (TTL) of a message stored in Redis server. Default is 10 minutes.
-        /// </summary>
-        public TimeSpan MessageExpiration { get; set; } = TimeSpan.FromMinutes(10);
-
         /// <inheritdoc />
-        public void Publish(string channel, string message)
+        public void Publish(string channel, string message, TimeSpan messageExpiration = default)
         {
-            var parameters = CreateScriptParameters(channel, message);
+            var parameters = CreateScriptParameters(channel, message, messageExpiration);
             Database.ScriptEvaluate(_publishScript, parameters, CommandFlags.DemandMaster | CommandFlags.PreferMaster | CommandFlags.NoRedirect);
         }
 
         /// <inheritdoc />
-        public Task PublishAsync(string channel, string message)
+        public Task PublishAsync(string channel, string message, TimeSpan messageExpiration = default)
         {
-            var parameters = CreateScriptParameters(channel, message);
+            var parameters = CreateScriptParameters(channel, message, messageExpiration);
             return Database.ScriptEvaluateAsync(_publishScript, parameters, CommandFlags.DemandMaster);
         }
 
-        private object CreateScriptParameters(string channel, string message)
+        private object CreateScriptParameters(string channel, string message, TimeSpan messageExpiration)
         {
+            if (messageExpiration == default)
+            {
+                messageExpiration = _defaultMessageExpiration;
+            }
+
             return new
             {
                 channel = (RedisKey)channel,
                 message = message,
-                expiration = (int)MessageExpiration.TotalSeconds
+                expiration = (int)messageExpiration.TotalSeconds
             };
         }
 

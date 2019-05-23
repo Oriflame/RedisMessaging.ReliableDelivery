@@ -7,22 +7,26 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     /// When a message is received then a subscriber should validate whether
     /// a message order is valid, i.e. whether some messages were accidentally lost
     /// </summary>
-    public interface IReliableSubscriber
+    internal interface IReliableSubscriber
     {
         /// <summary>
         /// Subscribes (synchronously) a <see cref="IMessageHandler"/>
         /// that is expected to process messages received.
         /// </summary>
+        /// <param name="channel">name of a channel from which a message should be received</param>
         /// <param name="handler">an object responsible for processing messages received</param>
-        void Subscribe(IMessageHandler handler);
+        /// <returns>checker for channel integrity validation</returns>
+        IMessageDeliveryChecker Subscribe(string channel, IMessageHandler handler);
 
         /// <summary>
         /// Subscribes (asynchronously) a <see cref="IMessageHandler"/>
         /// that is expected to process messages received.
         /// </summary>
+        /// <param name="channel">name of a channel from which a message should be received</param>
         /// <param name="handler">an object responsible for processing messages received</param>
         /// <returns>A continuation task</returns>
-        Task SubscribeAsync(IMessageHandler handler);
+        /// <returns>checker for channel integrity validation</returns>
+        Task<IMessageDeliveryChecker> SubscribeAsync(string channel, IMessageHandler handler);
 
         /// <summary>
         /// Removes (synchronously) a handlers previously subscribed via this subscriber

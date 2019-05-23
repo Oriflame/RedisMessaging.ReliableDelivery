@@ -4,7 +4,7 @@ using StackExchange.Redis;
 namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 {
     /// <inheritdoc />
-    public class MessageLoader : IMessageLoader
+    internal class MessageLoader : IMessageLoader
     {
         private readonly IConnectionMultiplexer _connectionMultiplexer;
 

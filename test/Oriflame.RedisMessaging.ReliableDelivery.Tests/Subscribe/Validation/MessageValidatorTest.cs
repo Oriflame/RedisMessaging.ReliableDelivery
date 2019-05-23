@@ -32,7 +32,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe.Validation
             var message2 = new Message(3, "test-message");
             var failureResult = validator.Validate(message2);
             Assert.Equal(3, validator.LastMessageId);
-            var resultForMissingMessages = Assert.IsAssignableFrom<ValidationResultForMissingMessages>(failureResult);
+            var resultForMissingMessages = Assert.IsAssignableFrom<ValidationResultForMissedMessages>(failureResult);
             Assert.Equal(1, resultForMissingMessages.LastProcessedMessageId); // message with ID=2 is missing
         }
 

@@ -9,16 +9,16 @@ using Xunit;
 
 namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 {
-    public class MessageHandlerTest
+    public class MessageProcessorTest
     {
-        private class MessageHandlerFake : MessageHandler
+        private class MessageProcessorTraceable : MessageProcessor
         {
             private readonly int _sleepMilliseconds;
             private readonly LinkedList<Message> _messagesCollector;
             private readonly LinkedList<string> _errorsCollector;
             private bool _isRunning;
 
-            public MessageHandlerFake(int sleepMilliseconds, LinkedList<Message> messagesCollector, LinkedList<string> errorsCollector)
+            public MessageProcessorTraceable(int sleepMilliseconds, LinkedList<Message> messagesCollector, LinkedList<string> errorsCollector)
                 : base(default(RedisChannel), null, null, null)
             {
                 _sleepMilliseconds = sleepMilliseconds;
@@ -52,27 +52,29 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         }
 
         [Fact]
-        public void FailoverMissingMessages()
+        public void HandleMissingMessages()
         {
             // arrange
             var messageValidator = new Mock<IMessageValidator>(MockBehavior.Strict);
             var messageLoader = new Mock<IMessageLoader>(MockBehavior.Strict);
             messageValidator.Setup(_ => _.Validate(It.IsAny<Message>()))
-                .Returns(new ValidationResultForMissingMessages(1));
+                .Returns(new ValidationResultForMissedMessages(1));
             messageLoader.Setup(_ => _.GetMessages("test-channel", 2, 122))
                 .Returns(new[] { new Message(2, "missing message") });
 
             // act
             var successfullyProcessedMessages = new List<Message>();
-            var messageHandler = new MessageHandler("test-channel", msg => successfullyProcessedMessages.Add(msg), messageValidator.Object, messageLoader.Object);
+            var messageHandler = new MessageHandler((channel, msg) => successfullyProcessedMessages.Add(msg));
+            var messageProcessor = new MessageProcessor("test-channel", messageValidator.Object, messageLoader.Object, messageHandler);
 
-            var beforeTestTime = DateTime.Now;
-            messageHandler.HandleMessage(new Message(123, "message"));
+            var beforeTestTime = DateTime.UtcNow;
+            messageProcessor.ProcessMessage(new Message(123, "message"));
 
             // assert
-            Assert.True(beforeTestTime < messageHandler.LastActivityAt);
+            Assert.True(beforeTestTime < messageProcessor.LastActivityAt);
             Assert.Equal(2, successfullyProcessedMessages.Count);
-            messageLoader.Verify(_ => _.GetMessages("test-channel", 2, 122));
+            messageValidator.Verify(_ => _.Validate(It.IsAny<Message>()), Times.Once);
+            messageLoader.Verify(_ => _.GetMessages("test-channel", 2, 122), Times.Once);
         }
 
         [Fact]
@@ -84,15 +86,15 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             var message4 = new Message(4, "message4");
             var receivedMessages = new LinkedList<Message>();
             var receivedErrors = new LinkedList<string>();
-            var messageHandler = new MessageHandlerFake(100, receivedMessages, receivedErrors);
+            var messageProcessor = new MessageProcessorTraceable(100, receivedMessages, receivedErrors);
 
             // act
             var messages = new[] { message4, message2 };
-            messageHandler.NewestMessages = messages;
-            ThreadPool.QueueUserWorkItem(state => messageHandler.CheckMissedMessages());
+            messageProcessor.NewestMessages = messages;
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.CheckForMissedMessages());
             Thread.Sleep(10);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message1));
-            Thread.Sleep(100 * (4+1+2) + 20);
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message1));
+            Thread.Sleep(100 * (4 + 1 + 2) + 20);
 
             // assert
             Assert.True(0 == receivedErrors.Count, string.Join("|||", receivedErrors));
@@ -113,18 +115,18 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             var message4 = new Message(4, "message4");
             var receivedMessages = new LinkedList<Message>();
             var receivedErrors = new LinkedList<string>();
-            var messageHandler = new MessageHandlerFake(
+            var messageProcessor = new MessageProcessorTraceable(
                 100,
                 receivedMessages,
                 receivedErrors);
 
             // act
             var messages = new[] { message1, message2 };
-            messageHandler.NewestMessages = messages;
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message4));
+            messageProcessor.NewestMessages = messages;
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message4));
             Thread.Sleep(1);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.CheckMissedMessages());
-            Thread.Sleep(100 * (4+1+2) + 5);
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.CheckForMissedMessages());
+            Thread.Sleep(100 * (4 + 1 + 2) + 5);
 
             // assert
             Assert.True(0 == receivedErrors.Count, string.Join("|||", receivedErrors));
@@ -148,23 +150,24 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             var message2 = new Message(2, "message2");
 
             // act
-            var messageHandler = new MessageHandler(
+            var messageHandler = new MessageHandler((channel, msg) =>
+            {
+                receivedMessages.AddLast(msg);
+                Thread.Sleep(10 * (int)msg.Id);
+            });
+            var messageProcessor = new MessageProcessor(
                 "test-channel",
-                msg =>
-                {
-                    receivedMessages.AddLast(msg);
-                    Thread.Sleep(10 * (int)msg.Id);
-                },
                 messageValidator,
-                messageLoader.Object);
+                messageLoader.Object,
+                messageHandler);
 
             var messages = new[] { message1A, message2 };
             messageLoader.Setup(_ => _.GetMessages("test-channel", It.IsAny<long>(), long.MaxValue))
                 .Returns(messages);
-            messageHandler.HandleMessage(message1);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.HandleMessage(message1));
+            messageProcessor.ProcessMessage(message1);
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message1));
             Thread.Sleep(1);
-            ThreadPool.QueueUserWorkItem(state => messageHandler.CheckMissedMessages());
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.CheckForMissedMessages());
             Thread.Sleep(100);
 
             // assert

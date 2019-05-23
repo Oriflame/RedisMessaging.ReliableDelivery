@@ -56,13 +56,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Publish
         {
             // arrange
             var channelName = "test-channel-" + nameof(PublishWillSaveMessageInRedis);
-            var publisher = new ReliablePublisher(_redis.GetConnection())
-            {
-                MessageExpiration = TimeSpan.FromSeconds(30)
-            };
+            var publisher = new ReliablePublisher(_redis.GetConnection());
 
             // act
-            publisher.Publish(channelName, "test message:my message");
+            var messageExpiration = TimeSpan.FromSeconds(30);
+            publisher.Publish(channelName, "test message:my message", messageExpiration);
 
             // assert
             var database = _redis.GetConnection().GetDatabase();
