@@ -27,7 +27,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Publish
 
             // act
             publisher.Publish(channelName, "test message:my message");
-            Thread.Sleep(20);
+            Thread.Sleep(50);
 
             // assert
             Assert.Equal("1:test message:my message", receivedMessage);
