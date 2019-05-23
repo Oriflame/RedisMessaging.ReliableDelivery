@@ -3,5 +3,5 @@
     /// <summary>
     /// Represents a result object for <see cref="IMessageValidator.Validate"/>
     /// </summary>
-    public interface IMessageValidationResult { }
+    internal interface IMessageValidationResult { }
 }

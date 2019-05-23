@@ -23,18 +23,23 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
                 {
                     if (_connectionMultiplexer == null)
                     {
-                        _connectionMultiplexer = ConnectionMultiplexer.Connect(
-                            new ConfigurationOptions
-                            {
-                                EndPoints = {RedisInside.Endpoint},
-                                ClientName = nameof(RedisFixture),
-                                AllowAdmin = true
-                            });
+                        _connectionMultiplexer = CreateMultiplexer();
                     }
                 }
             }
 
             return _connectionMultiplexer;
+        }
+
+        public IConnectionMultiplexer CreateMultiplexer()
+        {
+            return ConnectionMultiplexer.Connect(
+                new ConfigurationOptions
+                {
+                    EndPoints = {RedisInside.Endpoint},
+                    ClientName = nameof(RedisFixture),
+                    AllowAdmin = true
+                });
         }
 
         public RedisInside.Redis RedisInside { get; }

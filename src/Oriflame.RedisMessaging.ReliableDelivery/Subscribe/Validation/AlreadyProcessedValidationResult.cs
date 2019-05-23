@@ -5,7 +5,7 @@
     /// hence it is being processed again.
     /// See <see cref="IMessageValidator.Validate(Message)" />
     /// </summary>
-    public sealed class AlreadyProcessedValidationResult : IMessageValidationResult
+    internal sealed class AlreadyProcessedValidationResult : IMessageValidationResult
     {
         /// <summary>
         /// A singleton instance for this result type

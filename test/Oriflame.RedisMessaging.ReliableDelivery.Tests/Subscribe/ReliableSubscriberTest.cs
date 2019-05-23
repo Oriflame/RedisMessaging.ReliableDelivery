@@ -24,12 +24,12 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             public long ExceptionsCount { get; private set; }
 
-            protected override bool OnMessageHandlingException(Exception exception, RedisValue rawMessage)
+            protected override bool OnMessageHandlingException(Exception exception)
             {
                 ++ExceptionsCount;
                 LastException = exception;
 
-                return base.OnMessageHandlingException(exception, rawMessage);
+                return base.OnMessageHandlingException(exception);
             }
         }
 
@@ -51,13 +51,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         {
             // arrange
             var subscriber = new ReliableSubscriber(_redis.GetConnection(), null);
-            _messageHandler.SetupGet(_ => _.Channel)
-                .Returns("testChannel");
 
             // act & assert
-            subscriber.Subscribe(_messageHandler.Object);
+            subscriber.Subscribe("testChannel", _messageHandler.Object);
 
-            var exception = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(_messageHandler.Object));
+            var exception = Assert.Throws<ArgumentException>(() => subscriber.Subscribe("testChannel", _messageHandler.Object));
             Assert.Contains("There already exists a handler subscribed to channel", exception.Message);
         }
 
@@ -66,13 +64,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         {
             // arrange
             var subscriber = new ReliableSubscriber(_redis.GetConnection(), null);
-            _messageHandler.SetupGet(_ => _.Channel)
-                .Returns("testChannel");
 
             // act & assert
-            await subscriber.SubscribeAsync(_messageHandler.Object);
+            await subscriber.SubscribeAsync("testChannel", _messageHandler.Object);
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(() => subscriber.SubscribeAsync(_messageHandler.Object));
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => subscriber.SubscribeAsync("testChannel", _messageHandler.Object));
             Assert.Contains("There already exists a handler subscribed to channel", exception.Message);
         }
 
@@ -91,15 +87,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             _messageParser.Setup(_ => _.TryParse(It.IsAny<string>(), out parsedMessage))
                 .Returns(false); // simulation of message in invalid format
 
-
             var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, _log.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
-            _messageHandler.SetupGet(_ => _.Channel)
-                .Returns("testChannel");
-
             // act
-            subscriber.Subscribe(_messageHandler.Object);
+            subscriber.Subscribe("testChannel", _messageHandler.Object);
             publisher.Publish("testChannel", "message");
             Thread.Sleep(50);
 
@@ -125,15 +117,13 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             _messageParser.Setup(_ => _.TryParse(It.IsAny<string>(), out parsedMessage))
                 .Returns(true); // simulation of message in valid format
 
-            _messageHandler.SetupGet(_ => _.Channel)
-                .Returns("testChannel");
-            _messageHandler.Setup(_ => _.HandleMessage(It.IsAny<Message>()));
+            _messageHandler.Setup(_ => _.OnExpectedMessage(It.IsAny<string>(), It.IsAny<Message>()));
 
             var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, _log.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
             // act
-            subscriber.Subscribe(_messageHandler.Object);
+            subscriber.Subscribe("testChannel", _messageHandler.Object);
             publisher.Publish("testChannel", $"{messageId}:message"); // simulation of sending messageId of type long
             Thread.Sleep(50);
 
@@ -141,7 +131,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             Assert.Null(subscriber.LastException);
             Assert.Equal(0, subscriber.ExceptionsCount);
             _messageParser.Verify(_ => _.TryParse($"{messageId}:message", out parsedMessage), Times.Once);
-            _messageHandler.Verify(_ => _.HandleMessage(new Message(messageId, "message")), Times.Once);
+            _messageHandler.Verify(_ => _.OnExpectedMessage("testChannel", new Message(messageId, "message")), Times.Once);
         }
     }
 }

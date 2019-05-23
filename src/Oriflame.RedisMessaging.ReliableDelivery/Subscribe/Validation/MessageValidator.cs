@@ -1,7 +1,7 @@
 ﻿namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe.Validation
 {
     /// <inheritdoc />
-    public class MessageValidator : IMessageValidator
+    internal class MessageValidator : IMessageValidator
     {
         /// <inheritdoc />
         public long LastMessageId { get; private set; }
@@ -29,7 +29,7 @@
 
             if (IsMessageMissing(previousMessageId, message.Id))
             {
-                return new ValidationResultForMissingMessages(previousMessageId);
+                return new ValidationResultForMissedMessages(previousMessageId);
             }
 
             return SuccessValidationResult.Instance;

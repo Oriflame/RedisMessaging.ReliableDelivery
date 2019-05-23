@@ -5,7 +5,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     /// <summary>
     /// Provides capability to get published messages from Redis server 
     /// </summary>
-    public interface IMessageLoader
+    internal interface IMessageLoader
     {
         /// <summary>
         /// Loads messages from Redis server that were already published

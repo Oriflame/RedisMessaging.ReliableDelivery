@@ -8,7 +8,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     /// Parses a message so that successful parsing wil result in a structured message containing
     /// message ID and message content.
     /// </summary>
-    public class MessageParser : IMessageParser
+    internal class MessageParser : IMessageParser
     {
         private static readonly char[] Separator = { ReliablePublisher.MessagePartSeparator };
         private readonly ILogger<MessageParser> _log;

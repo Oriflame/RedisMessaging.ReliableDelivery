@@ -3,7 +3,7 @@
     /// <summary>
     /// Provides analyzing anf parsing a raw message received from Redis subscriber
     /// </summary>
-    public interface IMessageParser
+    internal interface IMessageParser
     {
         /// <param name="message">raw message delivered from Redis</param>
         /// <param name="parsedMessage">parsed message with fully initialized properties Id and Content in case return value is true</param>
