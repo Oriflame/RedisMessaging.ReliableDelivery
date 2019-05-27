@@ -19,7 +19,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery
             _connectionMultiplexer = connectionMultiplexer;
             _publisher = new ReliablePublisher(connectionMultiplexer);
             var messageParser = new MessageParser(ToLogger<MessageParser>(loggerFactory));
-            _subscriber = new ReliableSubscriber(connectionMultiplexer, messageParser, ToLogger<ReliableSubscriber>(loggerFactory));
+            _subscriber = new ReliableSubscriber(connectionMultiplexer, messageParser, loggerFactory);
         }
 
         public void Publish(string channel, string message, TimeSpan messageExpiration = default)

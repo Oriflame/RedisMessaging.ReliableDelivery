@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,6 +17,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     {
         private readonly IMessageParser _messageParser;
         private readonly ILogger<ReliableSubscriber> _log;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly IConnectionMultiplexer _connectionMultiplexer;
         private readonly ConcurrentDictionary<string, ChannelMessageQueue> _queues = new ConcurrentDictionary<string, ChannelMessageQueue>();
 
@@ -27,15 +27,16 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// </summary>
         /// <param name="connectionMultiplexer">A multiplexer providing low-level communication with Redis server</param>
         /// <param name="messageParser">an object responsible for analyzing a raw string message and parsing it to a structured <see cref="Message"/></param>
-        /// <param name="log">logger tracing internal activity of this subscriber</param>
+        /// <param name="loggerFactory">logger factory for creating loggers to trace internal activity of this subscriber</param>
         public ReliableSubscriber(
             IConnectionMultiplexer connectionMultiplexer,
             IMessageParser messageParser,
-            ILogger<ReliableSubscriber> log = null)
+            ILoggerFactory loggerFactory = null)
         {
             _connectionMultiplexer = connectionMultiplexer;
             _messageParser = messageParser;
-            _log = log ?? NullLogger<ReliableSubscriber>.Instance;
+            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+            _log = _loggerFactory.CreateLogger<ReliableSubscriber>();
         }
 
         /// <summary>
@@ -197,7 +198,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         {
             var messageValidator = new MessageValidator();
             var messageLoader = new MessageLoader(_connectionMultiplexer);
-            return new MessageProcessor(channel, messageValidator, messageLoader, messageHandler);
+            return new MessageProcessor(channel, messageValidator, messageLoader, messageHandler, _loggerFactory.CreateLogger<MessageProcessor>());
         }
 
         private static void EnsureNotPatternBasedChannel(string channel)

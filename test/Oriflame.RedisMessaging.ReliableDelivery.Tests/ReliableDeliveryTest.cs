@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Oriflame.RedisMessaging.ReliableDelivery.Publish;
 using Oriflame.RedisMessaging.ReliableDelivery.Subscribe;
@@ -19,8 +18,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
         {
             public TogglingSubscriber(
                 IConnectionMultiplexer connectionMultiplexer,
-                IMessageParser messageParser,
-                ILogger<ReliableSubscriber> log = null) : base(connectionMultiplexer, messageParser, log)
+                IMessageParser messageParser) : base(connectionMultiplexer, messageParser)
             {
             }
 

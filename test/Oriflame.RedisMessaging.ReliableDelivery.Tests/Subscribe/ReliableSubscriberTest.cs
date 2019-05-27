@@ -16,7 +16,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             public ReliableSubscriberTraceable(
                 IConnectionMultiplexer connectionMultiplexer,
                 IMessageParser messageParser,
-                ILogger<ReliableSubscriber> log = null) : base(connectionMultiplexer, messageParser, log)
+                ILoggerFactory loggerFactory) : base(connectionMultiplexer, messageParser, loggerFactory)
             {
             }
 
@@ -35,14 +35,12 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 
         private readonly RedisFixture _redis;
         private readonly Mock<IMessageParser> _messageParser;
-        private readonly Mock<ILogger<ReliableSubscriber>> _log;
         private readonly Mock<IMessageHandler> _messageHandler;
 
         public ReliableSubscriberTest(RedisFixture redis)
         {
             _redis = redis;
             _messageParser = new Mock<IMessageParser>(MockBehavior.Strict);
-            _log = new Mock<ILogger<ReliableSubscriber>>(MockBehavior.Strict);
             _messageHandler = new Mock<IMessageHandler>(MockBehavior.Strict);
         }
 
@@ -76,7 +74,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
         public void ReceivingMessageInInvalidFormatShouldNotInvokeMessageHandler()
         {
             // arrange
-            _log.Setup(_ => _.Log(
+            var log = new Mock<ILoggerFactory>(MockBehavior.Strict);
+            log.Setup(_ => _.CreateLogger(It.IsAny<string>()).Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
                 It.IsAny<object>(),
@@ -87,7 +86,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             _messageParser.Setup(_ => _.TryParse(It.IsAny<string>(), out parsedMessage))
                 .Returns(false); // simulation of message in invalid format
 
-            var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, _log.Object);
+            var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, log.Object);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
             // act
@@ -100,7 +99,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             Assert.Equal(0, subscriber.ExceptionsCount);
             _messageParser.Verify(_ => _.TryParse("message", out parsedMessage), Times.Once);
 
-            _log.Verify(_ => _.Log(
+            log.Verify(_ => _.CreateLogger(It.IsAny<string>()).Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
                 It.IsAny<object>(),
@@ -119,7 +118,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             _messageHandler.Setup(_ => _.OnExpectedMessage(It.IsAny<string>(), It.IsAny<Message>()));
 
-            var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, _log.Object);
+            var subscriber = new ReliableSubscriberTraceable(_redis.GetConnection(), _messageParser.Object, null);
             var publisher = _redis.GetConnection().GetSubscriber(); // standard, not-reliable publisher
 
             // act
