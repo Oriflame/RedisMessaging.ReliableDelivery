@@ -152,9 +152,9 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 var missingMessagesCount = expectedMessagesCount - messagesCount;
                 _log.LogWarning(
                     "It was not possible to get {MissingMessages} missed messages from expected {ExpectedMessages} messages in channel '{channel}'.",
-                    Channel,
                     missingMessagesCount,
-                    expectedMessagesCount);
+                    expectedMessagesCount,
+                    Channel);
                 _messageHandler.OnMissingMessages(Channel, missingMessagesCount);
             }
         }
