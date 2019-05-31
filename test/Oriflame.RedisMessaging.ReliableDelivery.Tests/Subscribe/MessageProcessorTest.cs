@@ -28,7 +28,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             public IEnumerable<Message> NewestMessages { get; set; }
 
-            protected override void HandleMessageImpl(Message message)
+            protected override void HandleMessageImpl(Message message, string channel)
             {
                 if (_isRunning)
                 {
@@ -45,7 +45,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
                 _isRunning = false;
             }
 
-            protected override IEnumerable<Message> GetNewestMessages()
+            protected override IEnumerable<Message> GetNewestMessages(string channel)
             {
                 return NewestMessages;
             }
@@ -68,7 +68,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             var messageProcessor = new MessageProcessor("test-channel", messageValidator.Object, messageLoader.Object, messageHandler);
 
             var beforeTestTime = DateTime.UtcNow;
-            messageProcessor.ProcessMessage(new Message(123, "message"));
+            messageProcessor.ProcessMessage(new Message(123, "message"), "test-channel");
 
             // assert
             Assert.True(beforeTestTime < messageProcessor.LastActivityAt);
@@ -93,7 +93,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             messageProcessor.NewestMessages = messages;
             ThreadPool.QueueUserWorkItem(state => messageProcessor.CheckForMissedMessages());
             Thread.Sleep(10);
-            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message1));
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message1, "test-channel"));
             Thread.Sleep(100 * (4 + 1 + 2) + 20);
 
             // assert
@@ -123,7 +123,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             // act
             var messages = new[] { message1, message2 };
             messageProcessor.NewestMessages = messages;
-            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message4));
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message4, "test-channel"));
             Thread.Sleep(1);
             ThreadPool.QueueUserWorkItem(state => messageProcessor.CheckForMissedMessages());
             Thread.Sleep(100 * (4 + 1 + 2) + 5);
@@ -164,8 +164,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
             var messages = new[] { message1A, message2 };
             messageLoader.Setup(_ => _.GetMessages("test-channel", It.IsAny<long>(), long.MaxValue))
                 .Returns(messages);
-            messageProcessor.ProcessMessage(message1);
-            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message1));
+            messageProcessor.ProcessMessage(message1, "test-channel");
+            ThreadPool.QueueUserWorkItem(state => messageProcessor.ProcessMessage(message1, "test-channel"));
             Thread.Sleep(1);
             ThreadPool.QueueUserWorkItem(state => messageProcessor.CheckForMissedMessages());
             Thread.Sleep(100);

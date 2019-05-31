@@ -151,7 +151,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                     return;
                 }
 
-                processor.ProcessMessage(parsedMessage);
+                processor.ProcessMessage(parsedMessage, channel);
             }
             catch (Exception exception)
             {
