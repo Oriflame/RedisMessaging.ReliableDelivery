@@ -57,7 +57,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 var queue = Subscriber.Subscribe(channel);
 
                 messageProcessor = CreateMessageProcessor(channel, handler);
-                queue.OnMessage(channelMessage => HandleMessage(channel, channelMessage.Message, messageProcessor));
+                queue.OnMessage(channelMessage => HandleMessage(channelMessage.Channel, channelMessage.Message, messageProcessor));
                 isQueueAlreadyRegistered = false;
                 return queue;
             });
@@ -141,17 +141,17 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             return Task.WhenAll(tasks);
         }
 
-        protected virtual void HandleMessage(string channel, RedisValue rawMessage, IMessageProcessor processor)
+        protected virtual void HandleMessage(string physicalChannel, RedisValue rawMessage, IMessageProcessor processor)
         {
             try
             {
                 if (!_messageParser.TryParse(rawMessage, out var parsedMessage))
                 {
-                    OnInvalidMessageFormat(channel, rawMessage);
+                    OnInvalidMessageFormat(physicalChannel, rawMessage);
                     return;
                 }
 
-                processor.ProcessMessage(parsedMessage, channel);
+                processor.ProcessMessage(parsedMessage, physicalChannel);
             }
             catch (Exception exception)
             {
@@ -184,13 +184,13 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// Method raised when a raw string message received is not in a valid format,
         /// e.g. it does not contain `sequence number` and `message content`
         /// </summary>
-        /// <param name="channel">name of a channel from which a message was received</param>
+        /// <param name="physicalChannel">name of a channel from which a message was received</param>
         /// <param name="rawMessage">a message sent from Redis server</param>
-        private void OnInvalidMessageFormat(string channel, RedisValue rawMessage)
+        private void OnInvalidMessageFormat(string physicalChannel, RedisValue rawMessage)
         {
             _log.LogWarning(
                 "Invalid message format in channel '{Channel}'. rawMessage={RawMessage}",
-                channel,
+                physicalChannel,
                 rawMessage);
         }
 

@@ -10,12 +10,12 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// <summary>
         /// function called when an expected message is received, e.g. its sequence number is not out of order
         /// </summary>
-        void OnExpectedMessage(string channel, Message message);
+        void OnExpectedMessage(string physicalOrLogicalChannel, Message message);
 
-        void OnMissedMessage(string channel, Message message);
+        void OnMissedMessage(string physicalOrLogicalChannel, Message message);
         
-        void OnDuplicatedMessage(string channel, Message message);
+        void OnDuplicatedMessage(string physicalOrLogicalChannel, Message message);
 
-        void OnMissingMessages(string channel, long missingMessagesCount);
+        void OnMissingMessages(string physicalOrLogicalChannel, long missingMessagesCount);
     }
 }

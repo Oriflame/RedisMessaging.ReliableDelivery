@@ -2,6 +2,6 @@
 {
     internal interface IMessageProcessor
     {
-        void ProcessMessage(Message message, string channel);
+        void ProcessMessage(Message message, string physicalChannel);
     }
 }
