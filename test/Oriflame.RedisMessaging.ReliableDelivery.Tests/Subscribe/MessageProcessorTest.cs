@@ -28,7 +28,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             public IEnumerable<Message> NewestMessages { get; set; }
 
-            protected override void HandleMessageImpl(Message message, string channel)
+            protected override void HandleMessageImpl(Message message, string physicalOrLogicalChannel)
             {
                 if (_isRunning)
                 {
@@ -45,7 +45,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
                 _isRunning = false;
             }
 
-            protected override IEnumerable<Message> GetNewestMessages(string channel)
+            protected override IEnumerable<Message> GetNewestMessages()
             {
                 return NewestMessages;
             }

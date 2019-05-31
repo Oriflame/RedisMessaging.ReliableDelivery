@@ -21,24 +21,24 @@
             _onMissingMessages = onMissingMessages ?? _noop2;
         }
 
-        public void OnExpectedMessage(string channel, Message message)
+        public void OnExpectedMessage(string physicalOrLogicalChannel, Message message)
         {
-            _onExpectedMessage(channel, message);
+            _onExpectedMessage(physicalOrLogicalChannel, message);
         }
 
-        public void OnMissedMessage(string channel, Message message)
+        public void OnMissedMessage(string physicalOrLogicalChannel, Message message)
         {
-            _onMissedMessage(channel, message);
+            _onMissedMessage(physicalOrLogicalChannel, message);
         }
 
-        public void OnDuplicatedMessage(string channel, Message message)
+        public void OnDuplicatedMessage(string physicalOrLogicalChannel, Message message)
         {
-            _onDuplicatedMessage(channel, message);
+            _onDuplicatedMessage(physicalOrLogicalChannel, message);
         }
 
-        public void OnMissingMessages(string channel, long missingMessagesCount)
+        public void OnMissingMessages(string physicalOrLogicalChannel, long missingMessagesCount)
         {
-            _onMissingMessages(channel, missingMessagesCount);
+            _onMissingMessages(physicalOrLogicalChannel, missingMessagesCount);
         }
     }
 }

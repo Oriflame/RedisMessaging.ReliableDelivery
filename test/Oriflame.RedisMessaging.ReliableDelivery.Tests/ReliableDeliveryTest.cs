@@ -24,11 +24,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests
 
             public bool IsEnabled { get; set; } = true;
 
-            protected override void HandleMessage(string channel, RedisValue rawMessage, IMessageProcessor processor)
+            protected override void HandleMessage(string physicalChannel, RedisValue rawMessage, IMessageProcessor processor)
             {
                 if (IsEnabled)
                 {
-                    base.HandleMessage(channel, rawMessage, processor);
+                    base.HandleMessage(physicalChannel, rawMessage, processor);
                 }
             }
         }
