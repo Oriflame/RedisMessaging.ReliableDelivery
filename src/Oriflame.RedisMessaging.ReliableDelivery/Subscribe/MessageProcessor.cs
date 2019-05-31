@@ -114,8 +114,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                 case SuccessValidationResult _:
                     OnExpectedMessage(message);
                     break;
-                case ValidationResultForMissedMessages missingMessagesResult:
-                    var lastProcessedMessageId = missingMessagesResult.LastProcessedMessageId;
+                case ValidationResultForMissedMessages missedMessagesResult:
+                    var lastProcessedMessageId = missedMessagesResult.LastProcessedMessageId;
                     OnMissedMessages(message, lastProcessedMessageId);
                     OnExpectedMessage(message);
                     break;
@@ -138,6 +138,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         {
             var fromMessageId = lastProcessedMessageId + 1;
             var toMessageId = currentMessage.Id - 1;
+            _log.LogWarning("Missed messages in channel '{channel}' detected: IDs range=<{fromMessageId}, {toMessageId}>", Channel, fromMessageId, toMessageId);
             var missedMessages = _messageLoader.GetMessages(Channel, fromMessageId, toMessageId);
             var messagesCount = 0;
             foreach (var missedMessage in missedMessages)
@@ -150,7 +151,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             if (expectedMessagesCount > messagesCount)
             {
                 var missingMessagesCount = expectedMessagesCount - messagesCount;
-                _log.LogWarning(
+                _log.LogError(
                     "It was not possible to get {MissingMessages} missed messages from expected {ExpectedMessages} messages in channel '{channel}'.",
                     missingMessagesCount,
                     expectedMessagesCount,
@@ -176,7 +177,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         protected virtual void OnDuplicatedMessage(Message message)
         {
             _messageHandler.OnDuplicatedMessage(Channel, message);
-            _log.LogWarning("Message in channel '{channel}' was received again: {Message}", Channel, message);
+            _log.LogWarning("Message in channel '{channel}' was received again: messageId={MessageId}", Channel, message.Id);
         }
 
         /// <summary>
@@ -187,10 +188,10 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// <param name="validationResult">result from <see cref="IMessageValidator.Validate"/></param>
         protected virtual void OnOtherValidationResult(Message message, IMessageValidationResult validationResult)
         {
-            _log.LogDebug("OtherValidationResult occured in channel '{channel}': {ValidationResult}, Message: {Message}",
+            _log.LogDebug("OtherValidationResult occured in channel '{channel}': {ValidationResult}, messageId={MessageId}",
                 Channel,
                 validationResult,
-                message);
+                message.Id);
         }
     }
 }
