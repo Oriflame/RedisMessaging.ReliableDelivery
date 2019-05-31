@@ -91,7 +91,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             }
 
             var messageProcessor = CreateMessageProcessor(channel, handler);
-            queue.OnMessage(channelMessage => HandleMessage(channel, channelMessage.Message, messageProcessor));
+            queue.OnMessage(channelMessage => HandleMessage(channelMessage.Channel, channelMessage.Message, messageProcessor));
 
             return messageProcessor;
         }
