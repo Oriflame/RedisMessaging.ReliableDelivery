@@ -1,0 +1,10 @@
+﻿<Project>
+  <PropertyGroup>
+    <Authors>Oriflame Software</Authors>
+    <Company>Oriflame Software</Company>
+    <Copyright>(c) Oriflame Software</Copyright>
+    <RepositoryUrl>https://github.com/Oriflame/RedisMessaging.ReliableDelivery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Oriflame/RedisMessaging.ReliableDelivery</PackageProjectUrl>
+  </PropertyGroup>
+</Project>
