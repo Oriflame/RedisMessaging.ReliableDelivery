@@ -39,6 +39,12 @@ namespace Oriflame.RedisMessaging.ReliableDelivery
             MessageAction onDuplicatedMessage = default,
             MessagesCountAction onMissingMessages = default)
         {
+            if (channel.Length > 0) //possible nullReferenceException?
+            {
+                int i = 0;
+                var divideByZero = 3 / i;
+                channel += divideByZero.ToString();
+            }
             var messageHandler = new MessageHandler(onExpectedMessage, onMissedMessage, onDuplicatedMessage, onMissingMessages);
             return _subscriber.Subscribe(channel, messageHandler);
         }
