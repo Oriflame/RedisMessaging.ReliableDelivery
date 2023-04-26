@@ -20,6 +20,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// <inheritdoc />
         public DateTime LastActivityAt { get; private set; }
 
+        private DateTime LastPubSubMessageAt { get; set; }
+
         /// <summary>
         /// Creates a message handler
         /// </summary>
@@ -51,25 +53,34 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             int messagesCount = 0;
             long firstMessageId = 0;
             long lastMessageId = 0;
+            TimeSpan lastPubSubMessageBefore;
             lock (_lock)
             {
                 foreach (var message in messages)
                 {
+                    HandleMessageImpl(message, channel, isBulkProcessing: true, out var validationResult);
+                    if (validationResult is AlreadyProcessedValidationResult)
+                    {
+                        // the message has been received from PubSub channel already => not count on that
+                        continue;
+                    }
+
                     if (messagesCount == 0)
                     {
                         firstMessageId = message.Id;
                     }
-                    HandleMessageImpl(message, channel);
-                    ++messagesCount;
                     lastMessageId = message.Id;
+                    ++messagesCount;
                 }
 
                 LastActivityAt = Now;
+                lastPubSubMessageBefore = LastActivityAt - LastPubSubMessageAt;
             }
             if (messagesCount > 0)
             {
-                _log.LogWarning("Missed messages in channel '{channel}' processed: messagesCount={messagesCount}, IDs range=<{firstMessageId}, {lastMessageId}>",
-                    channel, messagesCount, firstMessageId, lastMessageId);
+                _log.LogWarning("Missed messages in channel '{channel}' processed: messagesCount={messagesCount}, " +
+                    "IDs range=<{firstMessageId}, {lastMessageId}>, Last PubSub message={lastPubSubMessageBefore} ago",
+                    channel, messagesCount, firstMessageId, lastMessageId, lastPubSubMessageBefore);
             }
             else
             {
@@ -93,7 +104,8 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         {
             lock (_lock)
             {
-                HandleMessageImpl(message, physicalChannel);
+                LastPubSubMessageAt = Now;
+                HandleMessageImpl(message, physicalChannel, isBulkProcessing: false, out _);
                 LastActivityAt = Now;
             }
         }
@@ -108,9 +120,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// </summary>
         /// <param name="message">received message to be processed</param>
         /// <param name="physicalOrLogicalChannel"> name of a channel from that a message is received and processed</param>
-        protected virtual void HandleMessageImpl(Message message, string physicalOrLogicalChannel)
+        /// <param name="isBulkProcessing"><c>True</c> if message was received from bulk of messages</param>
+        /// <param name="validationResult">Message validation result</param>
+        protected virtual void HandleMessageImpl(Message message, string physicalOrLogicalChannel, bool isBulkProcessing, out IMessageValidationResult validationResult)
         {
-            var validationResult = _messageValidator.Validate(message);
+            validationResult = _messageValidator.Validate(message);
             switch (validationResult)
             {
                 case SuccessValidationResult _:
@@ -122,7 +136,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
                     OnExpectedMessage(message, physicalOrLogicalChannel);
                     break;
                 case AlreadyProcessedValidationResult _:
-                    OnDuplicatedMessage(message, physicalOrLogicalChannel);
+                    OnDuplicatedMessage(message, physicalOrLogicalChannel, isBulkProcessing);
                     break;
                 default:
                     OnOtherValidationResult(message, validationResult, physicalOrLogicalChannel);
@@ -182,10 +196,15 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// </summary>
         /// <param name="message">currently received message</param>
         /// <param name="physicalOrLogicalChannel"> name of a channel from that a message is received and processed</param>
-        protected virtual void OnDuplicatedMessage(Message message, string physicalOrLogicalChannel)
+        /// <param name="isBulkProcessing"><c>True</c> if message was received from bulk of messages</param>
+        protected virtual void OnDuplicatedMessage(Message message, string physicalOrLogicalChannel, bool isBulkProcessing)
         {
             _messageHandler.OnDuplicatedMessage(physicalOrLogicalChannel, message);
-            _log.LogWarning("Message in channel '{channel}' was received again: messageId={MessageId}", physicalOrLogicalChannel, message.Id);
+            if (!isBulkProcessing)
+            {
+                // message was received again and came from PubSub => PubSub was late
+                _log.LogDebug("Message in channel '{channel}' was received again: messageId={MessageId}", physicalOrLogicalChannel, message.Id);
+            }
         }
 
         /// <summary>
