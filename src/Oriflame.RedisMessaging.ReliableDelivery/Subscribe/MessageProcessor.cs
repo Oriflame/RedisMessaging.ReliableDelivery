@@ -9,6 +9,11 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     /// <inheritdoc cref="IMessageDeliveryChecker" />
     internal class MessageProcessor : IMessageProcessor, IMessageDeliveryChecker
     {
+        /// <summary>
+        /// Threshold for difference PubSub received message time and handled message time
+        /// </summary>
+        private static readonly TimeSpan PubSubReceivedHandledThreshold = TimeSpan.FromSeconds(2);
+
         private readonly IMessageValidator _messageValidator;
         private readonly IMessageLoader _messageLoader;
         private readonly IMessageHandler _messageHandler;
@@ -79,7 +84,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             if (messagesCount > 0)
             {
                 _log.LogWarning("Missed messages in channel '{channel}' processed: messagesCount={messagesCount}, " +
-                    "IDs range=<{firstMessageId}, {lastMessageId}>, Last PubSub message={lastPubSubMessageBefore} ago",
+                    "IDs range=<{firstMessageId}, {lastMessageId}>, last PubSub message before={lastPubSubMessageBefore}",
                     channel, messagesCount, firstMessageId, lastMessageId, lastPubSubMessageBefore);
             }
             else
@@ -102,8 +107,16 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
 
         public void ProcessMessage(Message message, string physicalChannel)
         {
+            var messageReceivedAt = Now;
             lock (_lock)
             {
+                var messageReceivedHandledDiff = Now - messageReceivedAt;
+                if (messageReceivedHandledDiff > PubSubReceivedHandledThreshold)
+                {
+                    _log.LogWarning("Message handling in channel '{channel}' was delayed: messageId={MessageId}, delay={messageReceivedHandledDiff}",
+                        physicalChannel, message.Id, messageReceivedHandledDiff);
+                }
+
                 LastPubSubMessageAt = Now;
                 HandleMessageImpl(message, physicalChannel, isBulkProcessing: false, out _);
                 LastActivityAt = Now;
