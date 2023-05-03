@@ -9,11 +9,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     /// <inheritdoc cref="IMessageDeliveryChecker" />
     internal class MessageProcessor : IMessageProcessor, IMessageDeliveryChecker
     {
-        /// <summary>
-        /// Threshold for difference PubSub received message time and handled message time
-        /// </summary>
-        private static readonly TimeSpan PubSubReceivedHandledThreshold = TimeSpan.FromSeconds(2);
-
+        private readonly TimeSpan _pubSubReceivedHandledThreshold = TimeSpan.FromSeconds(2);
         private readonly IMessageValidator _messageValidator;
         private readonly IMessageLoader _messageLoader;
         private readonly IMessageHandler _messageHandler;
@@ -35,18 +31,21 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
         /// <param name="messageLoader">provides capability to directly get messages stored in Redis server</param>
         /// <param name="messageHandler">a handler responsible for processing a message received</param>
         /// <param name="log">logger tracing internal activity of this subscriber</param>
+        /// <param name="pubSubReceivedHandledThreshold">Threshold for difference of message received time and message handled time (used for logging)</param>
         public MessageProcessor(
             string channel,
             IMessageValidator messageValidator,
             IMessageLoader messageLoader,
             IMessageHandler messageHandler,
-            ILogger<MessageProcessor> log = default)
+            ILogger<MessageProcessor> log = default,
+            TimeSpan? pubSubReceivedHandledThreshold = null)
         {
             Channel = channel;
             _messageValidator = messageValidator;
             _messageLoader = messageLoader;
             _messageHandler = messageHandler;
             _log = log ?? NullLogger<MessageProcessor>.Instance;
+            _pubSubReceivedHandledThreshold = pubSubReceivedHandledThreshold ?? TimeSpan.FromSeconds(2);
         }
 
         /// <inheritdoc />
@@ -111,7 +110,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
             lock (_lock)
             {
                 var messageReceivedHandledDiff = Now - messageReceivedAt;
-                if (messageReceivedHandledDiff > PubSubReceivedHandledThreshold)
+                if (messageReceivedHandledDiff > _pubSubReceivedHandledThreshold)
                 {
                     _log.LogWarning("Message handling in channel '{channel}' was delayed: messageId={MessageId}, delay={messageReceivedHandledDiff}",
                         physicalChannel, message.Id, messageReceivedHandledDiff);
