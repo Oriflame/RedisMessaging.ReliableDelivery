@@ -9,7 +9,7 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Subscribe
     /// <inheritdoc cref="IMessageDeliveryChecker" />
     internal class MessageProcessor : IMessageProcessor, IMessageDeliveryChecker
     {
-        private readonly TimeSpan _pubSubReceivedHandledThreshold = TimeSpan.FromSeconds(2);
+        private readonly TimeSpan _pubSubReceivedHandledThreshold;
         private readonly IMessageValidator _messageValidator;
         private readonly IMessageLoader _messageLoader;
         private readonly IMessageHandler _messageHandler;
