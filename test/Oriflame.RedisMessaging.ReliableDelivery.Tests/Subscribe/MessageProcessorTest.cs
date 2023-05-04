@@ -28,8 +28,10 @@ namespace Oriflame.RedisMessaging.ReliableDelivery.Tests.Subscribe
 
             public IEnumerable<Message> NewestMessages { get; set; }
 
-            protected override void HandleMessageImpl(Message message, string physicalOrLogicalChannel)
+            protected override void HandleMessageImpl(Message message, string physicalOrLogicalChannel, bool isBulkProcessing, out IMessageValidationResult validationResult)
             {
+                validationResult = null;
+
                 if (_isRunning)
                 {
                     var error = $"Is running for message {message}";
