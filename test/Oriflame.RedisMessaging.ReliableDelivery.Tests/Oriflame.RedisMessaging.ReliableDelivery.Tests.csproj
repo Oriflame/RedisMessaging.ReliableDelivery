@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>false</IsPackable>
     <ProjectGuid>{C59EBBCC-62A1-4D63-9C82-D507F66E5DE9}</ProjectGuid>
   </PropertyGroup>
@@ -20,7 +20,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
-    <PackageReference Include="Ori.Common.SonarQubeTests" Version="1.1.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
